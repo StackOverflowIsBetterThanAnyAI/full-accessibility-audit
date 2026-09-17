@@ -28,7 +28,7 @@
         "prettier-es5": "^0.0.4",
         "typescript": "~5.9.3",
         "typescript-eslint": "^8.65.0",
-        "wait-on": "^9.0.10"
+        "wait-on": "^9.1.0"
     },
     "allowScripts": {
         "cypress@15.19.0": true

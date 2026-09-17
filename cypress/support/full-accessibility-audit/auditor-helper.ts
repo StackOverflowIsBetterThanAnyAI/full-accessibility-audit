@@ -124,6 +124,7 @@ export const processViolations = (
             if (
                 Array.isArray(node.target) &&
                 node.target.length &&
+                typeof node.target[0] === 'string' &&
                 !node.target[0].startsWith('<')
             ) {
                 exactDomLocation = node.target.join(' > ')

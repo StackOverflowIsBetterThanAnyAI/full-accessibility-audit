@@ -31,6 +31,6 @@
         "wait-on": "^9.0.10"
     },
     "allowScripts": {
-        "cypress@15.18.1": true
+        "cypress@15.19.0": true
     }
 }

@@ -1,3 +1,6 @@
 /node_modules
 /cypress/fixtures/full-accessibility-audit.json
 /cypress/screenshots
+/benchmark/fixtures
+/benchmark/results
+/benchmark/screenshots

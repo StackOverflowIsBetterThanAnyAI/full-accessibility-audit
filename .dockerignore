@@ -1,0 +1,7 @@
+.github
+node_modules
+benchmark
+cypress.benchmark.config.ts
+cypress/fixtures
+cypress/screenshots
+cypress/videos

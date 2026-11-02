@@ -72,6 +72,65 @@ export const checkFirstValidMetaRefresh = (
     }
 }
 
+export const checkPlaceholderDocumentTitle = (
+    $head: JQuery<HTMLElement>,
+    callback: CustomAuditCallback
+) => {
+    const placeholderTitles = [
+        'vite app',
+        'vite + ts',
+        'vite + react',
+        'vite + react + ts',
+        'vite + vue',
+        'vite + vue + ts',
+        'vite + svelte',
+        'vite + svelte + ts',
+        'vite + preact',
+        'vite + preact + ts',
+        'vite + solid',
+        'vite + solid + ts',
+        'vite + lit',
+        'vite + lit + ts',
+        'vite + qwik',
+        'react app',
+        'create next app',
+        'svelte app',
+        'ionic app',
+        'document',
+        'untitled',
+        'untitled document',
+    ]
+
+    const title = ($head[0]?.ownerDocument?.title || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+    if (!title || !placeholderTitles.includes(title.toLowerCase())) {
+        return
+    }
+
+    const $title = $head.find('title').first()
+    const element = $title.length ? $title[0] : $head[0]
+
+    callback([
+        createCustomViolation({
+            id: 'document-title-placeholder',
+            impact: 'serious',
+            description: `The page title "${title}" is the default title of a project template`,
+            help: 'The page title must describe the topic or purpose of the page',
+            helpUrl:
+                'https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html',
+            html: element.outerHTML,
+            failureSummary: [
+                `The document title is "${title}".`,
+                'Replace the default template title with a title that describes the page.',
+            ],
+            tags: ['wcag2a', 'wcag242'],
+            element,
+        }),
+    ])
+}
+
 export const checkValidMetaViewport = (
     $head: JQuery<HTMLElement>,
     callback: CustomAuditCallback

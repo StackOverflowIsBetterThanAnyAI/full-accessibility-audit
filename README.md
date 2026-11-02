@@ -31,3 +31,15 @@ jobs:
 ```
 
 This ensures that the code is checked for digital barriers every time the file is run in this GitHub Actions pipeline.
+
+## Benchmark
+
+The audit can be validated against the official [W3C ACT rules test cases](https://www.w3.org/WAI/standards-guidelines/act/rules/). The benchmark is a local development tool only and is neither part of the GitHub Actions workflow nor of the Docker image.
+
+```
+npm run benchmark:fetch                          # download all test cases
+node benchmark/fetch-testcases.mjs --rules=bc4a75  # or only selected ACT rules
+npm run benchmark
+```
+
+The results (TP / FP / TN / FN, precision, recall and false positive rate per ACT rule) are written to `benchmark/results/`.

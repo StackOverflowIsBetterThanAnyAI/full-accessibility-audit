@@ -1184,6 +1184,158 @@ export const checkDynamicContrast = (
     })
 }
 
+export const checkPasswordPasteBlocked = (
+    $body: JQuery<HTMLElement>,
+    callback: CustomAuditCallback
+) => {
+    const violations: CustomViolationReturnType[] = []
+
+    $body.find('input[type="password"]').each((_, el) => {
+        const input = el as HTMLInputElement
+        const $input = Cypress.$(input)
+
+        if (
+            input.disabled ||
+            input.readOnly ||
+            $input.is(':hidden') ||
+            $input.closest('[aria-hidden="true"], [hidden]').length
+        ) {
+            return
+        }
+
+        const autocomplete = (input.getAttribute('autocomplete') || '')
+            .trim()
+            .toLowerCase()
+        if (autocomplete.split(/\s+/).includes('new-password')) {
+            return
+        }
+
+        const win = input.ownerDocument.defaultView
+        if (!win) {
+            return
+        }
+
+        let pasteEvent: Event
+        try {
+            const clipboardData = new win.DataTransfer()
+            clipboardData.setData('text/plain', 'audit-paste-check')
+            pasteEvent = new win.ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                clipboardData,
+            })
+        } catch {
+            pasteEvent = new win.Event('paste', {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+            })
+        }
+
+        const isPasteAllowed = input.dispatchEvent(pasteEvent)
+        if (isPasteAllowed) {
+            return
+        }
+
+        violations.push(
+            createCustomViolation({
+                id: 'password-paste-blocked',
+                impact: 'serious',
+                description: 'Pasting into the password field is blocked',
+                help: 'Users must be able to paste passwords, e.g. from a password manager, instead of having to remember and transcribe them',
+                helpUrl:
+                    'https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html',
+                html: input.outerHTML,
+                failureSummary: [
+                    'A "paste" event on this password field was cancelled by the page (preventDefault).',
+                    'Remove the paste restriction so that password managers and copy & paste can be used.',
+                ],
+                tags: ['wcag22aa', 'wcag338'],
+                element: input,
+            })
+        )
+    })
+
+    if (violations.length) {
+        callback(violations)
+    }
+}
+
+export const checkOrphanedLabelFor = (
+    $body: JQuery<HTMLElement>,
+    callback: CustomAuditCallback
+) => {
+    const violations: CustomViolationReturnType[] = []
+
+    const labelableSelector =
+        'button, input:not([type="hidden"]), meter, output, progress, select, textarea'
+
+    $body.find('label[for]').each((_, el) => {
+        const label = el as HTMLLabelElement
+        const $label = Cypress.$(label)
+        const targetId = label.getAttribute('for') || ''
+
+        if (
+            !targetId.trim() ||
+            $label.is(':hidden') ||
+            $label.closest('[aria-hidden="true"], [hidden]').length
+        ) {
+            return
+        }
+
+        const root = label.getRootNode() as Document | ShadowRoot
+        const target = root.getElementById(targetId)
+
+        const isLabelable =
+            !!target &&
+            (target.matches(labelableSelector) || target.tagName.includes('-'))
+
+        if (isLabelable) {
+            return
+        }
+
+        const labelId = label.id
+        const isReferencedByAria =
+            !!labelId &&
+            Array.from(root.querySelectorAll('[aria-labelledby]')).some(
+                (referencing) =>
+                    (referencing.getAttribute('aria-labelledby') || '')
+                        .split(/\s+/)
+                        .includes(labelId)
+            )
+
+        if (isReferencedByAria) {
+            return
+        }
+
+        violations.push(
+            createCustomViolation({
+                id: 'label-for-orphaned',
+                impact: 'serious',
+                description: target
+                    ? `The label points to the element with id "${targetId}", which is not a form control`
+                    : `The label points to the id "${targetId}", which does not exist`,
+                help: 'Visible labels must be programmatically associated with their form control',
+                helpUrl: 'https://www.w3.org/WAI/WCAG22/Techniques/html/H44',
+                html: label.outerHTML,
+                failureSummary: [
+                    target
+                        ? `The element with id "${targetId}" is a <${target.tagName.toLowerCase()}>, which cannot be labelled.`
+                        : `No element with id "${targetId}" exists on the page.`,
+                    'Set the "for" attribute to the id of the input, select or textarea this label describes.',
+                ],
+                tags: ['wcag2a', 'wcag131'],
+                element: label,
+            })
+        )
+    })
+
+    if (violations.length) {
+        callback(violations)
+    }
+}
+
 export const checkInvalidAnchorElements = (
     $body: JQuery<HTMLElement>,
     callback: CustomAuditCallback

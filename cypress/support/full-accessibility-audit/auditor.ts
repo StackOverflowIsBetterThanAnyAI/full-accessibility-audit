@@ -37,7 +37,9 @@ export const runAxeAudit = (
                     width: number
                     height: number
                 }) => {
-                    const securePath = addLeadingSlash(currentPath)
+                    const securePath = /^https?:\/\//i.test(currentPath)
+                        ? currentPath
+                        : addLeadingSlash(currentPath)
 
                     cy.visit(securePath, {
                         onBeforeLoad: (win) => {

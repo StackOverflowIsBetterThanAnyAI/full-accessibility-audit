@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { createReadStream, existsSync, statSync } from 'fs'
 import { createServer } from 'http'
-import { AddressInfo } from 'net'
+import type { AddressInfo } from 'net'
 import { extname, join, normalize, resolve } from 'path'
 
 const CONTENT_TYPES: Record<string, string> = {

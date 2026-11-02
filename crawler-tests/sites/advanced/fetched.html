@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Fetched</title>
+    </head>
+    <body>
+        <main>
+            <h1>Fetched</h1>
+            <div id="fetched"></div>
+            <script>
+                fetch('/api/links.json')
+                    .then((response) => response.json())
+                    .then((links) => {
+                        document.getElementById('fetched').innerHTML = links
+                            .map((link) => `<a href="${link}">${link}</a>`)
+                            .join('')
+                    })
+            </script>
+        </main>
+    </body>
+</html>

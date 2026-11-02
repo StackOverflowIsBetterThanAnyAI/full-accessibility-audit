@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Page</title>
+    </head>
+    <body>
+        <main>
+            <h1>Page</h1>
+            <nav id="pagination"></nav>
+            <script>
+                // long pagination: every page links to the next one, finite so that a missing limit fails instead of hanging
+                const current = Number(location.pathname.split('/').pop())
+                if (current < 30) {
+                    document.getElementById('pagination').innerHTML =
+                        `<a href="/page/${current + 1}">Next page</a>`
+                }
+            </script>
+        </main>
+    </body>
+</html>

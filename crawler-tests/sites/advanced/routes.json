@@ -1,0 +1,7 @@
+{
+    "/folder": { "status": 301, "location": "/folder/" },
+    "/loop-a": { "status": 302, "location": "/loop-b" },
+    "/loop-b": { "status": 302, "location": "/loop-a" },
+    "/xhtml": { "file": "xhtml.xhtml" },
+    "/api/links.json": { "file": "api/links.json", "delay": 1500 }
+}

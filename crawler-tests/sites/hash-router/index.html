@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Hash router</title>
+    </head>
+    <body>
+        <main>
+            <h1>Hash router</h1>
+            <nav>
+                <a href="#/">Home</a>
+                <a href="#/about">About</a>
+                <a href="#!/legacy">Legacy (hashbang)</a>
+                <a href="#/about/">About (hash route with trailing slash)</a>
+                <a href="#content">Skip to content (anchor)</a>
+            </nav>
+            <div id="content"></div>
+            <script>
+                const routes = {
+                    '/': '<h2>Home</h2><a href="#/contact">Contact</a>',
+                    '/about': '<h2>About</h2><a href="#/team">Team</a>',
+                    '/contact': '<h2>Contact</h2>',
+                    '/team': '<h2>Team</h2><a href="#/about">About (cycle)</a>',
+                    '/legacy': '<h2>Legacy</h2>',
+                }
+                const render = () => {
+                    const route = location.hash.replace(/^#!?/, '')
+                    const path = route.startsWith('/') ? route : '/'
+                    document.getElementById('content').innerHTML =
+                        routes[path] || '<h2>Not found</h2>'
+                }
+                window.addEventListener('hashchange', render)
+                render()
+            </script>
+        </main>
+    </body>
+</html>

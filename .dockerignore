@@ -5,3 +5,5 @@ cypress.benchmark.config.ts
 cypress/fixtures
 cypress/screenshots
 cypress/videos
+crawler-tests
+cypress.crawler-tests.config.ts

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <main>
+            <h1>Home</h1>
+            <nav>
+                <!-- origins: only the exact origin of the application is internal -->
+                <a href="__ORIGIN__/absolute"
+                    >Absolute url of the same origin</a
+                >
+                <a href="__ORIGIN_UPPER__/uppercase-origin"
+                    >Uppercase scheme and host</a
+                >
+                <a href="http://localhost:1/other-port">Other port</a>
+                <a href="https://localhost/other-scheme">Other scheme</a>
+                <a href="http://127.0.0.1:1/other-host">Other host</a>
+                <a href="JavaScript:alert(1)">Uppercase javascript protocol</a>
+
+                <!-- path normalization -->
+                <a href="/folder-a/../dot-segments">Dot segments</a>
+                <a href="/./single-dot">Single dot segment</a>
+                <a href="/docs//double-slash">Double slash</a>
+                <a href="/%c3%a4rger">Lowercase percent encoding</a>
+                <a href="/%C3%A4rger">Uppercase percent encoding</a>
+                <a href="/%C3%A4rger/">Percent encoding with trailing slash</a>
+                <a href="/index.htm">Index .htm</a>
+                <a href="/section/index.php">Index .php</a>
+                <a href="/Page.HTML">Uppercase extension</a>
+
+                <!-- anchors and link attributes -->
+                <a href="#">Hash only</a>
+                <a href="#!">Hashbang without route</a>
+                <a href="/new-tab" target="_blank" rel="noopener">New tab</a>
+                <a href="/no-follow" rel="nofollow">No follow</a>
+                <a href="?page=2">Relative query (allowlisted)</a>
+                <a href="?page=2&amp;utm_source=x"
+                    >Relative query with tracking</a
+                >
+
+                <!-- other link sources -->
+                <svg
+                    width="10"
+                    height="10"
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                >
+                    <a href="/svg-link"><rect width="5" height="5" /></a>
+                    <a xlink:href="/svg-xlink">
+                        <rect x="5" width="5" height="5" />
+                    </a>
+                </svg>
+                <iframe src="/frame" title="Same origin frame"></iframe>
+
+                <!-- pages with special behaviour -->
+                <a href="/throws">Page with an uncaught error</a>
+                <a href="/meta-refresh">Meta refresh redirect</a>
+                <a href="/js-redirect">JavaScript redirect</a>
+                <a href="/fetched">Links rendered after a fetch request</a>
+                <a href="/folder">Server redirect to the trailing slash</a>
+                <a href="/loop-a">Redirect loop</a>
+                <a href="/xhtml">XHTML page</a>
+            </nav>
+            <script>
+                // absolute links need the origin of the test server
+                document.querySelectorAll('a').forEach((link) => {
+                    const href = link.getAttribute('href')
+                    if (href.includes('__ORIGIN')) {
+                        const origin = href.includes('__ORIGIN_UPPER__')
+                            ? location.origin.toUpperCase()
+                            : location.origin
+                        link.setAttribute(
+                            'href',
+                            href.replace(/__ORIGIN(_UPPER)?__/, origin)
+                        )
+                    }
+                })
+            </script>
+        </main>
+    </body>
+</html>

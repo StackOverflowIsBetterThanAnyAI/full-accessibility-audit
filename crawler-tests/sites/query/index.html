@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <main>
+            <h1>Home</h1>
+            <nav>
+                <!-- same template with different ids: one page -->
+                <a href="/products?id=1">Product 1</a>
+                <a href="/products?id=2">Product 2</a>
+                <a href="/products?utm_source=newsletter&amp;utm_medium=mail"
+                    >Products (tracking)</a
+                >
+                <a href="/search?q=a+b">Search</a>
+                <a href="/?ref=home">Home (tracking)</a>
+
+                <!-- allowlisted parameter "tab": one page per value -->
+                <a href="/list?tab=reviews">Reviews tab</a>
+                <a href="/list?tab=specs">Specs tab</a>
+                <a href="/list?tab=specs&amp;utm_medium=mail"
+                    >Specs tab (tracking)</a
+                >
+                <a href="/list?sort=asc&amp;tab=specs"
+                    >Specs tab (other parameter)</a
+                >
+                <a href="/list?fbclid=abc&amp;tab=reviews&amp;gclid=xyz"
+                    >Reviews tab (click ids)</a
+                >
+            </nav>
+        </main>
+    </body>
+</html>

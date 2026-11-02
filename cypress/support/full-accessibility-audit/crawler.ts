@@ -1,70 +1,119 @@
-import { addLeadingSlash, removeTrailingSlash } from './url-helper'
-import { waitForElementsToStabilize } from './wait-for-elements-to-stabilize'
+import { getLinks } from './get-links'
+import { toAbsoluteUrl, toPage } from './page-url'
+import { resolvePage } from './resolve-page'
+import {
+    cleanUpExistingPattern,
+    isPathAllowedForAudit,
+} from './sitemap-patterns'
+import { PageType, SitemapConfigType } from './types'
 
-export const getInternalLinks = (baseUrl: string) => {
-    waitForElementsToStabilize('a')
+const DEFAULT_MAX_PAGES = 500
 
-    return cy.get('body').then(($body) => {
-        const links = $body.find<HTMLAnchorElement>('a')
-        if (!links.length) {
-            return []
-        }
-
-        const rawUrls: string[] = links
-            .map((_: number, el: HTMLAnchorElement) => el.href)
-            .get()
-
-        const baseOrigin = new URL(baseUrl).origin
-
-        const filteredUrls: string[] = rawUrls
-            .filter((link) => {
-                try {
-                    const url = new URL(link)
-
-                    const isInternal = url.origin === baseOrigin
-                    const isWebProtocol = url.protocol.startsWith('http')
-
-                    if (!isInternal || !isWebProtocol) {
-                        return null
-                    }
-
-                    // remove hash for consistent crawling
-                    url.hash = ''
-
-                    // ignore links that point to files other than .html
-                    const path = url.pathname
-                    const lastSegment = path.split('/').pop() || ''
-                    if (lastSegment.includes('.')) {
-                        if (!lastSegment.endsWith('.html')) {
-                            return null
-                        }
-                    }
-
-                    return url.href
-                } catch {
-                    return null
-                }
-            })
-            .filter((link): link is string => link !== null)
-
-        return [...new Set(filteredUrls)]
-    })
+const splitHash = (url: string) => {
+    const hashIndex = url.indexOf('#')
+    return hashIndex === -1
+        ? [url, '']
+        : [url.slice(0, hashIndex), url.slice(hashIndex)]
 }
 
-export const getSubPages = (baseUrl: string, link: string, queue: string[]) => {
-    const urlObj = new URL(link)
+export const crawlSite = (
+    baseUrl: string,
+    sitemapConfig: SitemapConfigType
+): Cypress.Chainable<string[]> => {
+    const queryParams = sitemapConfig.queryParams || []
+    const maxPages = sitemapConfig.maxPages || DEFAULT_MAX_PAGES
 
-    const path = urlObj.pathname
-    const fullPathWithQuery = urlObj.pathname + urlObj.search
-    const normalizedPath = removeTrailingSlash(path)
+    const knownKeys = new Set<string>()
+    const auditUrls = new Set<string>()
+    const queue: PageType[] = []
+    let crawledPages = 0
 
-    // ignore paths where only query parameters differ
-    const isPathInQueue = queue.some((queuedPath) => {
-        const queuedUrl = new URL(baseUrl + addLeadingSlash(queuedPath))
-        const normalizedQueuedPath = removeTrailingSlash(queuedUrl.pathname)
+    const toAppPage = (url: string) => toPage(url, baseUrl, queryParams)
 
-        return normalizedQueuedPath === normalizedPath
-    })
+    const enqueue = (page: PageType | null) => {
+        if (page && !knownKeys.has(page.key)) {
+            knownKeys.add(page.key)
+            queue.push(page)
+        }
+    }
 
-    return [fullPathWithQuery, isPathInQueue, normalizedPath] as const
+    // a redirect may lead to another page, which must only be handled once
+    const claimRedirectTarget = (page: PageType, target: PageType | null) => {
+        if (!target) {
+            return null
+        }
+        if (target.key === page.key) {
+            return page
+        }
+        if (knownKeys.has(target.key)) {
+            return null
+        }
+        knownKeys.add(target.key)
+        return target
+    }
+
+    const addToAudit = (path: string | undefined) => {
+        if (path && isPathAllowedForAudit(sitemapConfig, path)) {
+            auditUrls.add(path)
+        }
+    }
+
+    const crawlPage = (page: PageType) => {
+        crawledPages++
+        cy.visit(toAbsoluteUrl(page.path, baseUrl), { failOnStatusCode: false })
+
+        getLinks().then((links) =>
+            links.forEach((link) => enqueue(toAppPage(link)))
+        )
+
+        // client side redirects (meta refresh, JavaScript) replace the visited page
+        cy.location('href', { log: false }).then((currentUrl) =>
+            addToAudit(claimRedirectTarget(page, toAppPage(currentUrl))?.path)
+        )
+    }
+
+    const processQueue = () => {
+        const page = queue.shift()
+        if (!page || crawledPages >= maxPages) {
+            return
+        }
+
+        const [requestUrl, hash] = splitHash(toAbsoluteUrl(page.path, baseUrl))
+
+        resolvePage(requestUrl).then((finalUrl) => {
+            const finalPage =
+                finalUrl === requestUrl
+                    ? page
+                    : finalUrl &&
+                      claimRedirectTarget(page, toAppPage(finalUrl + hash))
+
+            if (finalPage) {
+                crawlPage(finalPage)
+            } else {
+                cy.log(`Skipped page: ${page.path}`)
+            }
+            cy.then(processQueue)
+        })
+    }
+
+    // errors of the application must not stop the crawler
+    cy.on('uncaught:exception', () => false)
+
+    return cy
+        .then(() => {
+            if (sitemapConfig.only?.length) {
+                sitemapConfig.only.forEach((item) =>
+                    auditUrls.add(cleanUpExistingPattern(item))
+                )
+                return
+            }
+
+            sitemapConfig.included?.forEach((item) =>
+                addToAudit(cleanUpExistingPattern(item))
+            )
+
+            enqueue(toAppPage(toAbsoluteUrl('/', baseUrl)))
+            processQueue()
+        })
+        .then(() => Array.from(auditUrls))
 }

@@ -1,0 +1,6 @@
+{
+    "/redirect-old": { "status": 301, "location": "/new-page" },
+    "/server-error": { "status": 500 },
+    "/to-external": { "status": 302, "location": "https://example.com/" },
+    "/image-link": { "file": "image-link.png" }
+}

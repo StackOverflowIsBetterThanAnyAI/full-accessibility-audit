@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <main>
+            <h1>Home</h1>
+            <nav>
+                <!-- relative, root-relative and self references -->
+                <a href="./about">About (relative)</a>
+                <a href="/contact/">Contact (trailing slash)</a>
+                <a href="/index.html">Home (index.html)</a>
+                <a href="">Home (empty href)</a>
+                <a href="#main">Skip to content (anchor)</a>
+                <a href="/about#team">About team (anchor on other page)</a>
+                <a>Placeholder without href</a>
+
+                <!-- links that must be ignored -->
+                <a href="https://example.com/external">External</a>
+                <a href="//example.com/protocol-relative">Protocol relative</a>
+                <a href="mailto:info@example.com">Mail</a>
+                <a href="tel:+431234567">Phone</a>
+                <a href="javascript:void(0)">JavaScript</a>
+                <a href="data:text/html,hello">Data URL</a>
+                <a href="ftp://example.com/file">FTP</a>
+                <a href="/files/report.PDF">Report (PDF)</a>
+                <a href="/files/archive.zip">Archive (ZIP)</a>
+                <a href="/images/logo.png">Logo (PNG)</a>
+                <a href="/feed.xml">Feed (XML)</a>
+                <a href="/data.json">Data (JSON)</a>
+                <a href="/brochure.html" download>Brochure (download)</a>
+
+                <!-- pages with file extensions or dots in the path -->
+                <a href="/docs/guide.htm">Guide (.htm)</a>
+                <a href="/legacy/page.php">Legacy (.php)</a>
+                <a href="/users/john.doe">Profile (dot in slug)</a>
+                <a href="/v1.2">Version 1.2 (dot in directory)</a>
+
+                <!-- encoding and whitespace -->
+                <a href="/&#xFC;ber-uns">About us (umlaut)</a>
+                <a href="/page%20two">Page two (encoded space)</a>
+                <a href="   /spaces   ">Spaces around href</a>
+
+                <!-- other link sources -->
+                <a href="/based">Page with base element</a>
+                <a href="/deep/1">Deep chain</a>
+            </nav>
+            <img src="/images/map.png" usemap="#map" alt="Map" />
+            <map name="map"
+                ><area
+                    shape="rect"
+                    coords="0,0,10,10"
+                    href="/map-target"
+                    alt="Map target"
+            /></map>
+            <div id="shadow-host"></div>
+            <div id="dynamic-container"></div>
+            <script>
+                // link inside an open shadow root
+                const shadowRoot = document
+                    .getElementById('shadow-host')
+                    .attachShadow({ mode: 'open' })
+                shadowRoot.innerHTML = '<a href="/shadow">Shadow DOM link</a>'
+
+                // link that is rendered later, e.g. after an API response
+                setTimeout(() => {
+                    document.getElementById('dynamic-container').innerHTML =
+                        '<a href="/dynamic">Dynamic link</a>'
+                }, 1000)
+            </script>
+        </main>
+    </body>
+</html>

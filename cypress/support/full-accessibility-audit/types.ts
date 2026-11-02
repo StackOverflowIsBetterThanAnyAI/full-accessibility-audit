@@ -78,3 +78,16 @@ export type ViolationNodeType = {
 }
 
 export type ViewportType = 'Mobile' | 'Desktop'
+
+export type SitemapConfigType = {
+    only: string[]
+    included: string[]
+    excluded: string[]
+    queryParams?: string[]
+    maxPages?: number
+}
+
+export type PageType = {
+    key: string
+    path: string
+}

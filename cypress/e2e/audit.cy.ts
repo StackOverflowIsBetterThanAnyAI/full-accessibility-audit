@@ -66,7 +66,9 @@ describe('Accessibility Audit', () => {
     })
 
     it('--- Accessibility Audit Summary ---', () => {
-        const totalIssues = errorList.length
+        const issues = errorList.filter((error) => !error.isHint)
+        const hints = errorList.filter((error) => error.isHint)
+        const totalIssues = issues.length
         const jsonPath = 'cypress/fixtures/full-accessibility-audit.json'
         const mdPath = 'cypress/fixtures/full-accessibility-audit.md'
 
@@ -86,19 +88,23 @@ describe('Accessibility Audit', () => {
         cy.log('----------------------------')
         cy.log(`Amount of checked pages: ${sitemap.urls.length}`)
         cy.log(`Total issues found: ${totalIssues}`)
+        cy.log(`Hints (AAA and best practices): ${hints.length}`)
         cy.log('----------------------------')
 
         cy.writeFile(jsonPath, {
             summary: {
                 totalCheckedPages: sitemap.urls.length,
                 totalIssues: totalIssues,
+                totalHints: hints.length,
                 timestamp: new Date().toISOString(),
             },
-            issues: errorList,
+            issues,
+            hints,
         })
 
         let mdContent = `# Full Accessibility Audit \n\n`
         mdContent += `> - **Total issues found:** ${totalIssues}\n`
+        mdContent += `> - **Hints (AAA and best practices):** ${hints.length}\n`
         mdContent += `> - **Amount of checked pages:** ${sitemap.urls.length}\n`
         mdContent += `> - **Timestamp:** ${new Date().toLocaleString('de-DE')}\n\n---\n\n`
 
@@ -110,7 +116,17 @@ describe('Accessibility Audit', () => {
         } else {
             mdContent += `## Found ${totalIssues} issues\n\n`
 
-            errorList.forEach((error, index) => {
+            issues.forEach((error, index) => {
+                mdContent += `### ${index + 1}. [${error.id}]\n\n${formatIssueAsMarkdown(error)}\n\n---\n\n`
+            })
+        }
+
+        if (hints.length) {
+            mdContent +=
+                `\n## ${hints.length} hints\n\n` +
+                `These findings go beyond level AA (AAA or best practices) and do not fail the audit.\n\n`
+
+            hints.forEach((error, index) => {
                 mdContent += `### ${index + 1}. [${error.id}]\n\n${formatIssueAsMarkdown(error)}\n\n---\n\n`
             })
         }
@@ -126,12 +142,12 @@ describe('Accessibility Audit', () => {
                     'Keep in mind that there may be other accessibility issues not covered by this audit.'
                 )
             } else {
-                errorList.forEach((error, index) => {
+                issues.forEach((error, index) => {
                     cy.log(`${index + 1}. ${error.message}`)
                 })
 
                 cy.then(() => {
-                    const errorMessage = errorList
+                    const errorMessage = issues
                         .map((err) => err.message)
                         .join(
                             '\n\n--------------------------------------------------------\n\n'

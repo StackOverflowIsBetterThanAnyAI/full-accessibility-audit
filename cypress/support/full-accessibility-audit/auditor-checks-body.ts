@@ -448,7 +448,7 @@ export const checkNonEmptyHeading = (
         }
 
         const isHiddenInTree =
-            $el.is(':hidden') ||
+            !el.getClientRects().length ||
             $el.css('visibility') === 'hidden' ||
             $el.closest('[aria-hidden="true"]').length > 0
         if (isHiddenInTree) {

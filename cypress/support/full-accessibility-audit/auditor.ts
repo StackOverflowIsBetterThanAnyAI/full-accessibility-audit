@@ -13,7 +13,8 @@ export const runAxeAudit = (
     currentPath: string,
     errorList: ErrorListType[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    globalStorage?: any
+    globalStorage?: any,
+    { axeOnly = false }: { axeOnly?: boolean } = {}
 ) => {
     const scenarios = [{ name: 'default state', useStorage: false }]
 
@@ -98,11 +99,15 @@ export const runAxeAudit = (
                                         'wcag22aa',
                                     ],
                                 },
-                                rules: {
-                                    'meta-viewport': { enabled: false },
-                                    'meta-refresh': { enabled: false },
-                                    'aria-prohibited-attr': { enabled: false },
-                                },
+                                rules: axeOnly
+                                    ? {}
+                                    : {
+                                          'meta-viewport': { enabled: false },
+                                          'meta-refresh': { enabled: false },
+                                          'aria-prohibited-attr': {
+                                              enabled: false,
+                                          },
+                                      },
                                 includedImpacts: [
                                     'critical',
                                     'serious',
@@ -120,6 +125,10 @@ export const runAxeAudit = (
                             },
                             true
                         )
+
+                        if (axeOnly) {
+                            return
+                        }
 
                         cy.get('body').then(($body) => {
                             Object.values(BodyChecks).forEach(

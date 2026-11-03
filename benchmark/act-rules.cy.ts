@@ -22,6 +22,9 @@ type BenchmarkResultType = {
 
 Cypress.Commands.overwrite('screenshot', () => {})
 
+const axeOnly = Boolean(Cypress.expose('AXE_ONLY'))
+const resultsName = axeOnly ? 'act-benchmark-axe' : 'act-benchmark'
+
 describe('System Benchmark: W3C ACT Rules Validation', () => {
     let benchmarkData: { testcases: W3CActTestCaseType[] }
     try {
@@ -50,6 +53,7 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
     }
 
     const actToRuleIds: Record<string, string[]> = {}
+    const axeRuleIds = axe.getRules().map((rule) => rule.ruleId)
 
     axe.getRules().forEach((rule) => {
         if (rule?.actIds && Array.isArray(rule.actIds)) {
@@ -60,7 +64,15 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
     })
 
     Object.entries(customActMapping).forEach(([actId, ruleIds]) => {
-        actToRuleIds[actId] = [...(actToRuleIds[actId] || []), ...ruleIds]
+        const usableRuleIds = axeOnly
+            ? ruleIds.filter((ruleId) => axeRuleIds.includes(ruleId))
+            : ruleIds
+        if (usableRuleIds.length) {
+            actToRuleIds[actId] = [
+                ...(actToRuleIds[actId] || []),
+                ...usableRuleIds,
+            ]
+        }
     })
 
     const results: BenchmarkResultType[] = []
@@ -105,7 +117,12 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
             const errorList: ErrorListType[] = []
             const mappedIds = actToRuleIds[tc.ruleId] || []
 
-            runAxeAudit(toLocalTestcaseUrl(benchmarkOrigin, tc.url), errorList)
+            runAxeAudit(
+                toLocalTestcaseUrl(benchmarkOrigin, tc.url),
+                errorList,
+                undefined,
+                { axeOnly }
+            )
 
             cy.then(() => {
                 const detectedIds = [
@@ -213,7 +230,7 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
             timestamp: new Date().toISOString(),
         }
 
-        let mdContent = `# W3C ACT Benchmark\n\n`
+        let mdContent = `# W3C ACT Benchmark${axeOnly ? ' (axe-core only)' : ''}\n\n`
         mdContent += `> - **Test cases:** ${summary.testcases} (${summary.unmappedTestcases} without mapped rule, ${summary.erroredTestcases} errored)\n`
         mdContent += `> - **TP / FP / TN / FN:** ${tp} / ${fp} / ${tn} / ${fn}\n`
         mdContent += `> - **Precision:** ${summary.precision ?? '-'}\n`
@@ -227,11 +244,11 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
                 mdContent += `| ${ruleId} | ${rule.ruleName} | ${rule.TP} | ${rule.FP} | ${rule.TN} | ${rule.FN} | ${rule.unmapped} | ${rule.error} |\n`
             })
 
-        cy.writeFile('benchmark/results/act-benchmark.json', {
+        cy.writeFile(`benchmark/results/${resultsName}.json`, {
             summary,
             rules,
             results,
         })
-        cy.writeFile('benchmark/results/act-benchmark.md', mdContent)
+        cy.writeFile(`benchmark/results/${resultsName}.md`, mdContent)
     })
 })

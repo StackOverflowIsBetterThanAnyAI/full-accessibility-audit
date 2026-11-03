@@ -37,6 +37,12 @@ on:
         default: "sitemap.json"
         description: "name of the json config file in ./cypress/fixtures/"
 
+      image_tag:
+        required: false
+        type: string
+        default: "latest"
+        description: "tag of the audit image, e.g. a version like 1.2.0 or sha-<commit>"
+
 jobs:
   Full_Accessibility_Audit:
     name: Full Accessibility Audit
@@ -44,10 +50,10 @@ jobs:
 
     steps:
       - name: Checkout Client-App
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node_version }}
           cache: "npm"
@@ -85,14 +91,14 @@ jobs:
             --add-host=host.docker.internal:host-gateway \
             -v ${{ github.workspace }}/audit:/app/cypress/fixtures \
             -v ${{ github.workspace }}/cypress/screenshots:/app/cypress/screenshots \
-            ghcr.io/stackoverflowisbetterthananyai/full-accessibility-audit:latest \
+            ghcr.io/stackoverflowisbetterthananyai/full-accessibility-audit:${{ inputs.image_tag }} \
             sh -c "
               npx wait-on $BASE_URL --timeout 60000 && \
               $AUDIT_COMMAND
             "
 
       - name: Upload Audit
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: full-accessibility-audit

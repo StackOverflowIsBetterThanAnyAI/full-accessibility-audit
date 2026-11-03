@@ -2,6 +2,7 @@ name: Publish Audit Image
 on:
     push:
         branches: [master]
+        tags: ["v*"]
 
 jobs:
     Publish_Audit_Image:
@@ -11,17 +12,28 @@ jobs:
             contents: read
             packages: write
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - name: Login to GHCR
-              uses: docker/login-action@v3
+              uses: docker/login-action@v4
               with:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Image Tags
+              id: meta
+              uses: docker/metadata-action@v6
+              with:
+                  images: ghcr.io/stackoverflowisbetterthananyai/full-accessibility-audit
+                  tags: |
+                      type=raw,value=latest,enable={{is_default_branch}}
+                      type=sha,format=long
+                      type=semver,pattern={{version}}
+
             - name: Build and Push
-              uses: docker/build-push-action@v5
+              uses: docker/build-push-action@v7
               with:
                   context: .
                   push: true
-                  tags: ghcr.io/stackoverflowisbetterthananyai/full-accessibility-audit:latest
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}

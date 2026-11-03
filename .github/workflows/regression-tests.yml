@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "npm"
@@ -33,7 +33,7 @@ jobs:
         run: npm run test:crawler
 
       - name: Upload Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: crawler-tests-screenshots
@@ -46,10 +46,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "npm"
@@ -72,14 +72,14 @@ jobs:
         run: npm run benchmark:update-baseline
 
       - name: Upload Baseline
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ inputs.update_baseline }}
         with:
           name: act-benchmark-baseline
           path: benchmark/baseline.json
 
       - name: Upload Benchmark Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: act-benchmark-results

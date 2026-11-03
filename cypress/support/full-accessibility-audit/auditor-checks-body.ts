@@ -1,37 +1,50 @@
-import { franc } from 'franc'
+import axe from 'axe-core'
 import $ from 'jquery'
-import { createCustomViolation } from './auditor-helper'
+import { createCustomViolation, getReferencedElements } from './auditor-helper'
 import { CustomAuditCallback, CustomViolationReturnType } from './types'
-import { checkLanguageCompatibility } from './check-language-compatibility'
+import { detectMismatchingLanguage } from './check-language-compatibility'
 import {
-    ARIA_LABEL_FORBIDDEN_ROLES,
-    ARIA_ROLE_ALLOWED_ATTRIBUTES,
     GLOBAL_ARIA_ATTRIBUTES,
+    PROHIBITED_ARIA_ATTRIBUTES,
 } from './wai-aria-roles'
+
+const FOCUSABLE_SELECTOR =
+    'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), iframe, summary, [contenteditable]:not([contenteditable="false"]), [tabindex]'
+
+// only alt texts that consist of nothing but a generic word, e.g. "image" or "Bild 3", but not "W3C logo"
+const GENERIC_ALT_TEXT =
+    /^(an? |the |ein |eine |das )?(graphics?|pictures?|images?|photos?|icons?|logos?|diagrams?|tables?|placeholder|grafik(en)?|abbildung(en)?|bild(er)?|fotos?|symbole?|tabellen?|platzhalter)( ?[0-9]+)?$/i
+
+const FILE_NAME_ALT_TEXT =
+    /\.(jpe?g|png|gif|tiff?|raw|svg|webp|avif|bmp|ico|heic)$/i
+
+// a single Han, Kana or Hangul character can be a meaningful word
+const LOGOGRAPHIC_CHARACTER =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+
+const isBadAltText = (altText: string) => {
+    if (!altText) {
+        return false
+    }
+    return (
+        FILE_NAME_ALT_TEXT.test(altText) ||
+        GENERIC_ALT_TEXT.test(altText) ||
+        /^[0-9]+$/.test(altText) ||
+        /^[^\p{L}\p{N}]+$/u.test(altText) ||
+        ([...altText].length === 1 && !LOGOGRAPHIC_CHARACTER.test(altText))
+    )
+}
 
 export const checkBadAltTextImage = (
     $body: JQuery<HTMLElement>,
     callback: CustomAuditCallback
 ) => {
-    const badAltPatterns = [
-        /\.(jpg|jpeg|png|gif|tiff|raw|svg|webp|avif)$/i,
-        /(graphic|picture|image|photo|icon|logo|diagram|table)/i,
-        /(grafik|abbildung|bild|foto|symbol|tabelle)/i,
-        /^placeholder$/i,
-        /^platzhalter$/i,
-        /^[0-9]+$/,
-        /^[^a-z0-9]+$/i,
-        /^.{1}$/,
-    ]
     const violations: CustomViolationReturnType[] = []
 
     $body.find('img[alt]').each((_, img) => {
         const altText = Cypress.$(img).attr('alt')?.trim() || ''
-        const isBadAltText = badAltPatterns.some((pattern) =>
-            pattern.test(altText)
-        )
 
-        if (isBadAltText) {
+        if (isBadAltText(altText)) {
             violations.push(
                 createCustomViolation({
                     id: 'bad-alt-image',
@@ -65,18 +78,10 @@ export const checkAltTextInputImage = (
     $body: JQuery<HTMLElement>,
     callback: CustomAuditCallback
 ) => {
-    const badAltPatterns = [
-        /\.(jpg|jpeg|png|gif|tiff|raw|svg|webp|avif)$/i,
-        /(graphic|picture|image|photo|icon|logo|diagram|table)/i,
-        /(grafik|abbildung|bild|foto|symbol|tabelle)/i,
-        /^placeholder$/i,
-        /^platzhalter$/i,
-        /^[0-9]+$/,
-        /^[^a-z0-9]+$/i,
-        /^.{1}$/,
+    const badLinkLikeAltPatterns = [
         /^click/i,
-        /here$/i,
-        /here\.{3}$/i,
+        /(^|\s)here$/i,
+        /(^|\s)here\.{3}$/i,
         /^more$/i,
         /^more\.{3}$/i,
         /^learn more$/i,
@@ -89,9 +94,8 @@ export const checkAltTextInputImage = (
         /^read more$/i,
         /^button$/i,
         /^klick/i,
-        /hier$/i,
-        /hier\.{3}$/i,
-        /mehr\.{3}$/i,
+        /(^|\s)hier$/i,
+        /(^|\s)hier\.{3}$/i,
         /mehr\.{3}$/i,
         /^mehr erfahren$/i,
         /^mehr erfahren\.{3}$/i,
@@ -111,45 +115,12 @@ export const checkAltTextInputImage = (
         }
 
         const alt = $img.attr('alt')
-        const ariaLabel = $img.attr('aria-label')?.trim()
-        const ariaLabelledBy = $img.attr('aria-labelledby')?.trim()
-        const title = $img.attr('title')?.trim()
-
-        const hasNoName =
-            !ariaLabel &&
-            !ariaLabelledBy &&
-            !title &&
-            (alt === undefined || alt.trim() === '')
-
-        if (hasNoName) {
-            violations.push(
-                createCustomViolation({
-                    id: 'bad-alt-input-image',
-                    impact: 'serious',
-                    description:
-                        '<input type="image"> elements must have an accessible name',
-                    help: 'The element has no alt attribute, aria-label, aria-labelledby or title',
-                    helpUrl:
-                        'https://www.w3.org/WAI/WCAG22/Techniques/failures/F65',
-                    html: img.outerHTML,
-                    failureSummary: [
-                        'Add a meaningful alt attribute.',
-                        'Alternatively, use aria-label or aria-labelledby.',
-                        'Alternatively, use a descriptive title attribute.',
-                    ],
-                    tags: ['wcag2a', 'wcag111'],
-                    element: img,
-                })
-            )
-            return
-        }
-
         const altText = alt?.trim() || ''
-        const isBadAltText = badAltPatterns.some((pattern) =>
-            pattern.test(altText)
-        )
+        const isBadInputAltText =
+            isBadAltText(altText) ||
+            badLinkLikeAltPatterns.some((pattern) => pattern.test(altText))
 
-        if (isBadAltText) {
+        if (isBadInputAltText) {
             violations.push(
                 createCustomViolation({
                     id: 'bad-alt-input-image',
@@ -227,8 +198,8 @@ export const checkBadLinkTexts = (
 
     const badLinkTextPatterns = [
         /^click/i,
-        /here$/i,
-        /here\.{3}$/i,
+        /(^|\s)here$/i,
+        /(^|\s)here\.{3}$/i,
         /^more$/i,
         /^more\.{3}$/i,
         /^learn more$/i,
@@ -241,9 +212,8 @@ export const checkBadLinkTexts = (
         /^read more$/i,
         /^button$/i,
         /^klick/i,
-        /hier$/i,
-        /hier\.{3}$/i,
-        /mehr\.{3}$/i,
+        /(^|\s)hier$/i,
+        /(^|\s)hier\.{3}$/i,
         /mehr\.{3}$/i,
         /^mehr erfahren$/i,
         /^mehr erfahren\.{3}$/i,
@@ -300,7 +270,7 @@ export const checkBadLinkTexts = (
                     description: `The link or button text "${accessibleName}" is generic and lacks context`,
                     help: 'Ensure that link and button texts clearly describe the destination or action without relying on surrounding context',
                     helpUrl:
-                        'https://www.w3.org/WAI/WCAG21/Understanding/link-purpose-in-context',
+                        'https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html',
                     html:
                         el.outerHTML.substring(0, 64) +
                         (el.outerHTML.length > 64 ? '...' : ''),
@@ -308,66 +278,11 @@ export const checkBadLinkTexts = (
                         `Element <${el.tagName.toLowerCase()}> has the accessible text: "${accessibleName}".`,
                         `Generic phrases are not meaningful when read out of context.`,
                     ],
-                    tags: ['wcag2a', 'wcag244'],
+                    tags: ['wcag2aaa', 'wcag249'],
                     element: el,
                 })
             )
         }
-    })
-
-    if (violations.length) {
-        callback(violations)
-    }
-}
-
-export const checkListStructure = (
-    $body: JQuery<HTMLElement>,
-    callback: CustomAuditCallback
-) => {
-    const violations: CustomViolationReturnType[] = []
-
-    $body.find('ul, ol, [role="list"]').each((_, list) => {
-        const $list = Cypress.$(list)
-
-        const role = $list.attr('role')
-        if (role === 'presentation' || role === 'none') {
-            return
-        }
-
-        $list.children().each((__, child) => {
-            const $child = Cypress.$(child)
-
-            if (
-                $child.is('script, template') ||
-                $child.attr('aria-hidden') === 'true' ||
-                $child.css('display') === 'none'
-            ) {
-                return
-            }
-
-            const childRole = $child.attr('role')
-            const isListItem = $child.is('li') || childRole === 'listitem'
-
-            if (!isListItem) {
-                violations.push(
-                    createCustomViolation({
-                        id: 'list-invalid-structure',
-                        impact: 'serious',
-                        description:
-                            'List element contains invalid child elements',
-                        help: 'Elements with a list role must only contain listitem elements',
-                        helpUrl:
-                            'https://www.w3.org/WAI/WCAG22/Techniques/html/H48',
-                        html: list.outerHTML,
-                        failureSummary: [
-                            'Direct children of a list must be <li> elements or have the role "listitem".',
-                        ],
-                        tags: ['wcag2a', 'wcag131'],
-                        element: list,
-                    })
-                )
-            }
-        })
     })
 
     if (violations.length) {
@@ -382,7 +297,11 @@ export const checkVideoCaptions = (
     const violations: CustomViolationReturnType[] = []
     $body.find('video').each((_, video) => {
         const $video = Cypress.$(video)
-        if (video.hasAttribute('muted')) {
+        if (
+            video.hasAttribute('muted') ||
+            $video.is(':hidden') ||
+            $video.closest('[aria-hidden="true"]').length
+        ) {
             return
         }
         const hasCaptions = $video.find('track[kind="captions"]').length > 0
@@ -429,6 +348,15 @@ export const checkFieldsetLegend = (
             legend.length && legendText.length && /\p{L}/u.test(legendText)
 
         const isLegendFirst = firstChild.is('legend')
+
+        const hasAriaName =
+            !!$fieldset.attr('aria-label')?.trim() ||
+            getReferencedElements(fieldset, 'aria-labelledby').some((target) =>
+                target.textContent?.trim()
+            )
+        if (!legend.length && hasAriaName) {
+            return
+        }
 
         if (!hasValidLegend || !isLegendFirst || hasMultipleLegends) {
             violations.push(
@@ -486,7 +414,7 @@ export const checkHeadingOrder = (
                     failureSummary: [
                         `Change this heading to <h${lastLevel + 1}> or higher.`,
                     ],
-                    tags: ['wcag2a', 'wcag131'],
+                    tags: ['best-practice'],
                     element: el,
                 })
             )
@@ -520,7 +448,8 @@ export const checkNonEmptyHeading = (
         }
 
         const isHiddenInTree =
-            $el.attr('aria-hidden') === 'true' ||
+            $el.is(':hidden') ||
+            $el.css('visibility') === 'hidden' ||
             $el.closest('[aria-hidden="true"]').length > 0
         if (isHiddenInTree) {
             return
@@ -529,13 +458,9 @@ export const checkNonEmptyHeading = (
         let accessibleName = ''
 
         if (hasAriaLabelledBy) {
-            const ids = $el.attr('aria-labelledby')!.split(/\s+/)
-            ids.forEach((id) => {
-                const $target = $body.find(`#${id}`)
-                if ($target.length > 0) {
-                    accessibleName += $target.text() || ''
-                }
-            })
+            accessibleName = getReferencedElements(el, 'aria-labelledby')
+                .map((target) => target.textContent || '')
+                .join(' ')
         } else if (hasAriaLabel) {
             accessibleName = $el.attr('aria-label') || ''
         } else {
@@ -641,7 +566,7 @@ export const checkAdjacentLinks = (
                                 'Check that every <img> element contained within the <a> element has a null value set for its alt attribute.',
                                 'Check that the <a> element contains an <img> element that has either a null alt attribute value or a value that supplements the link text and describes the image.',
                             ],
-                            tags: ['wcag2a', 'wcag111'],
+                            tags: ['best-practice'],
                             element: currentLink,
                         })
                     )
@@ -729,83 +654,6 @@ export const checkConflictDecorativeRole = (
     }
 }
 
-export const checkDetailsSummary = (
-    $body: JQuery<HTMLElement>,
-    callback: CustomAuditCallback
-) => {
-    const violations: CustomViolationReturnType[] = []
-
-    $body.find('details').each((_, el) => {
-        const $details = Cypress.$(el)
-        const isHidden =
-            $details.is(':hidden') ||
-            $details.css('display') === 'none' ||
-            $details.attr('aria-hidden') === 'true'
-        if (isHidden) {
-            return
-        }
-
-        const $summary = $details.children('summary').first()
-
-        const role = $summary.attr('role')?.trim().toLowerCase()
-        let decorativeRoleConflict = false
-
-        if (role === 'presentation' || role === 'none') {
-            decorativeRoleConflict = true
-        }
-
-        if (role && role !== 'summary' && !decorativeRoleConflict) {
-            return
-        }
-
-        let accessibleName = ''
-
-        const labelledBy = $summary.attr('aria-labelledby')
-        if (labelledBy) {
-            const target = $body.find(`#${labelledBy}`)
-            accessibleName = target.text().trim()
-        }
-
-        if (!accessibleName) {
-            accessibleName = $summary.attr('aria-label')?.trim() || ''
-        }
-
-        if (!accessibleName) {
-            accessibleName = $summary.text().trim()
-        }
-
-        if (
-            ($summary.length && accessibleName === '') ||
-            decorativeRoleConflict
-        ) {
-            violations.push(
-                createCustomViolation({
-                    id: 'details-summary-name',
-                    impact: 'serious',
-                    description:
-                        'Details element must have a visible and accessible summary name',
-                    help: 'The <summary> element provides the label for the expandable <details> widget. It must therefore not be empty',
-                    helpUrl:
-                        'https://www.w3.org/WAI/standards-guidelines/act/rules/2t702h/proposed/',
-                    html: $summary.length
-                        ? $summary[0].outerHTML
-                        : $details[0].outerHTML,
-                    failureSummary: [
-                        'The summary element must have a non-empty text content or an aria-label/labelledby attribute.',
-                        'The summary element must not have a decorative role (presentation/none).',
-                    ],
-                    tags: ['wcag2a', 'wcag412'],
-                    element: $summary.length ? $summary[0] : $details[0],
-                })
-            )
-        }
-    })
-
-    if (violations.length) {
-        callback(violations)
-    }
-}
-
 export const checkProhibitedAria = (
     $body: JQuery<HTMLElement>,
     callback: CustomAuditCallback
@@ -836,63 +684,43 @@ export const checkProhibitedAria = (
                 .getAttributeNames()
                 .filter((name) => name.startsWith('aria-'))
 
-            const computedRole = aria.getRole(el) || 'generic'
+            const explicitRole = el.getAttribute('role')?.trim().split(/\s+/)[0]
+            const isPresentational =
+                (explicitRole === 'none' || explicitRole === 'presentation') &&
+                !$el.is(FOCUSABLE_SELECTOR) &&
+                !ariaAttributesOnElement.some((attr) =>
+                    GLOBAL_ARIA_ATTRIBUTES.includes(attr)
+                )
+            const computedRole = isPresentational
+                ? 'presentation'
+                : aria.getRole(el) || 'generic'
 
             ariaAttributesOnElement.forEach((attr) => {
-                if (attr === 'aria-label' || attr === 'aria-labelledby') {
-                    if (ARIA_LABEL_FORBIDDEN_ROLES.includes(computedRole)) {
-                        violations.push(
-                            createCustomViolation({
-                                id: 'prohibited-aria-naming',
-                                impact: 'serious',
-                                description: `The attribute "${attr}" is prohibited on a "${computedRole}" element`,
-                                help: `Elements with role "${computedRole}" are purely structural and cannot be given an accessible name`,
-                                helpUrl:
-                                    'https://www.w3.org/WAI/standards-guidelines/act/rules/kb1m8s/proposed/',
-                                html:
-                                    el.outerHTML.substring(0, 64) +
-                                    (el.outerHTML.length > 64 ? '...' : ''),
-                                failureSummary: [
-                                    `Element <${el.tagName.toLowerCase()}> has the computed ARIA role "${computedRole}".`,
-                                    `The attribute "${attr}" is explicitly prohibited here because this role cannot be meaningfully announced with an accessible name.`,
-                                ],
-                                tags: ['wcag2a', 'wcag131'],
-                                element: el,
-                            })
-                        )
-                    }
+                const isProhibited =
+                    PROHIBITED_ARIA_ATTRIBUTES[attr]?.includes(computedRole)
+                if (!isProhibited) {
                     return
                 }
 
-                if (GLOBAL_ARIA_ATTRIBUTES.includes(attr)) {
-                    return
-                }
-
-                const allowedRolesForAttr = ARIA_ROLE_ALLOWED_ATTRIBUTES[attr]
-
-                if (allowedRolesForAttr) {
-                    if (!allowedRolesForAttr.includes(computedRole)) {
-                        violations.push(
-                            createCustomViolation({
-                                id: 'prohibited-aria-attribute',
-                                impact: 'serious',
-                                description: `The attribute "${attr}" is not permitted on a "${computedRole}" element`,
-                                help: `"${attr}" can only be used on roles that support it according to WAI-ARIA specs`,
-                                helpUrl:
-                                    'https://www.w3.org/TR/wai-aria-1.2/#state_prop_def',
-                                html:
-                                    el.outerHTML.substring(0, 64) +
-                                    (el.outerHTML.length > 64 ? '...' : ''),
-                                failureSummary: [
-                                    `Element <${el.tagName.toLowerCase()}> has the computed ARIA role "${computedRole}".`,
-                                    `The attribute "${attr}" is not supported by elements with role "${computedRole}".`,
-                                ],
-                                tags: ['wcag2a', 'wcag131'],
-                                element: el,
-                            })
-                        )
-                    }
-                }
+                violations.push(
+                    createCustomViolation({
+                        id: 'prohibited-aria-naming',
+                        impact: 'serious',
+                        description: `The attribute "${attr}" is prohibited on a "${computedRole}" element`,
+                        help: `Elements with role "${computedRole}" are purely structural and cannot be given an accessible name or role description`,
+                        helpUrl:
+                            'https://www.w3.org/WAI/standards-guidelines/act/rules/kb1m8s/proposed/',
+                        html:
+                            el.outerHTML.substring(0, 64) +
+                            (el.outerHTML.length > 64 ? '...' : ''),
+                        failureSummary: [
+                            `Element <${el.tagName.toLowerCase()}> has the computed ARIA role "${computedRole}".`,
+                            `The attribute "${attr}" is explicitly prohibited here because this role cannot be meaningfully announced with it.`,
+                        ],
+                        tags: ['wcag2a', 'wcag131'],
+                        element: el,
+                    })
+                )
             })
         })
 
@@ -927,16 +755,9 @@ export const checkLanguageMismatch = (
             }
         })
 
-        const labelledBy = $el.attr('aria-labelledby')
-        if (labelledBy) {
-            const ids = labelledBy.split(/\s+/)
-            ids.forEach((id) => {
-                const labelElement = $body.find(`#${id}`)
-                if (labelElement.length) {
-                    extraText.push(labelElement.text())
-                }
-            })
-        }
+        getReferencedElements(el, 'aria-labelledby').forEach((target) =>
+            extraText.push(target.textContent || '')
+        )
 
         const clone = $el.clone()
         clone.find('[lang]').remove()
@@ -945,16 +766,8 @@ export const checkLanguageMismatch = (
         const cleanText = (clone.text() + ' ' + extraText.join(' '))
             .replace(/\s+/g, ' ')
             .trim()
-        if (cleanText.length < 30) {
-            return
-        }
-
-        const detectedLang3 = franc(cleanText)
-        if (detectedLang3 === 'und') {
-            return
-        }
-
-        if (!checkLanguageCompatibility(declaredLang, detectedLang3)) {
+        const detectedLang3 = detectMismatchingLanguage(cleanText, declaredLang)
+        if (detectedLang3) {
             violations.push(
                 createCustomViolation({
                     id: 'language-mismatch',
@@ -981,111 +794,132 @@ export const checkLanguageMismatch = (
     }
 }
 
-export const checkLabelInNameStrict = (
-    $body: JQuery<HTMLElement>,
-    callback: CustomAuditCallback
-) => {
-    const violations: CustomViolationReturnType[] = []
+type InteractionStateType = 'hover' | 'focus'
 
-    const widgetRoles = [
-        'button',
-        'checkbox',
-        'link',
-        'menuitem',
-        'menuitemcheckbox',
-        'menuitemradio',
-        'option',
-        'radio',
-        'switch',
-        'tab',
-        'treeitem',
-    ]
+const MAX_TRANSITION_WAIT = 1000
+const MAX_HOVER_ATTEMPTS = 3
 
-    $body.find('[aria-label], [aria-labelledby]').each((_, el) => {
-        const $el = Cypress.$(el)
-
-        if ($el.is(':hidden') || $el.css('visibility') === 'hidden') {
-            return
-        }
-
-        const tagName = el.tagName.toUpperCase()
-        const role = $el.attr('role') || tagName.toLowerCase()
-
-        const isSupportedWidget =
-            widgetRoles.includes(role) ||
-            (tagName === 'A' && $el.attr('href')) ||
-            tagName === 'BUTTON'
-
-        if (!isSupportedWidget) {
-            return
-        }
-
-        const visibleText = $el.text().trim()
-        const actualCharacterCount = [...visibleText].length
-        if (actualCharacterCount <= 1) {
-            return
-        }
-
-        const hasIconFont = () => {
-            const font = $el.css('font-family').toLowerCase()
-            return (
-                font.includes('icon') ||
-                font.includes('symbol') ||
-                font.includes('material')
-            )
-        }
-        if (hasIconFont()) {
-            return
-        }
-
-        let accessibleName = ''
-        if ($el.attr('aria-label')) {
-            accessibleName = $el.attr('aria-label') || ''
-        } else if ($el.attr('aria-labelledby')) {
-            const ids = ($el.attr('aria-labelledby') || '').split(/\s+/)
-            accessibleName = ids
-                .map((id) => {
-                    const $target = $body.find(`#${id}`)
-                    return !$target.length ? '' : $target.text()
-                })
-                .filter((text) => text.trim().length)
-                .join(' ')
-        }
-
-        const cleanVisible = visibleText
-            .toLowerCase()
-            .replace(/\s+/g, ' ')
-            .trim()
-        const cleanAccessible = accessibleName
-            .toLowerCase()
-            .replace(/\s+/g, ' ')
-            .trim()
-
-        if (!cleanAccessible.includes(cleanVisible)) {
-            violations.push(
-                createCustomViolation({
-                    id: 'label-in-name',
-                    impact: 'serious',
-                    description: `The visible label "${visibleText}" is not part of the accessible name "${accessibleName}"`,
-                    help: 'The visible text of a widget must be included in the accessible name',
-                    helpUrl:
-                        'https://www.w3.org/WAI/standards-guidelines/act/rules/2ee8b8/proposed/',
-                    html: el.outerHTML,
-                    failureSummary: [
-                        `Visible Label: "${visibleText}".`,
-                        `Accessible Name: "${accessibleName}".`,
-                        'The visible text of a widget must be included in the accessible name.',
-                    ],
-                    tags: ['wcag2a', 'wcag253'],
-                    element: el,
-                })
-            )
-        }
+const dispatchMouseMove = (x: number, y: number) =>
+    Cypress.automation('remote:debugger:protocol', {
+        command: 'Input.dispatchMouseEvent',
+        params: { type: 'mouseMoved', x, y },
     })
 
-    if (violations.length) {
-        callback(violations)
+const moveMouse = (x: number, y: number) =>
+    cy.then(() => dispatchMouseMove(x, y))
+
+const getRunnerCoordinates = (el: HTMLElement) => {
+    const frame =
+        window.top?.document.querySelector<HTMLElement>('iframe.aut-iframe')
+    if (!frame?.offsetWidth) {
+        return null
     }
+
+    el.scrollIntoView({ block: 'center', inline: 'center' })
+    const frameRect = frame.getBoundingClientRect()
+    const scale = frameRect.width / frame.offsetWidth
+    const rect = el.getBoundingClientRect()
+
+    return {
+        x: frameRect.left + (rect.left + rect.width / 2) * scale,
+        y: frameRect.top + (rect.top + rect.height / 2) * scale,
+    }
+}
+
+const hoverElement = (
+    el: HTMLElement,
+    attempt = 1
+): Cypress.Chainable<boolean> => {
+    if (Cypress.browser.family !== 'chromium') {
+        return cy.wrap(false, { log: false })
+    }
+
+    return cy
+        .then((): Promise<boolean> => {
+            const coordinates = getRunnerCoordinates(el)
+            return coordinates
+                ? Promise.resolve(
+                      dispatchMouseMove(coordinates.x, coordinates.y)
+                  ).then(() => el.matches(':hover'))
+                : Promise.resolve(false)
+        })
+        .then((isHovered: boolean): unknown => {
+            if (isHovered || attempt >= MAX_HOVER_ATTEMPTS) {
+                return isHovered
+            }
+            cy.wait(100, { log: false })
+            return hoverElement(el, attempt + 1)
+        }) as Cypress.Chainable<boolean>
+}
+
+const waitForTransitions = (el: HTMLElement) => {
+    const style = getComputedStyle(el)
+    const toMilliseconds = (value: string) =>
+        Math.max(
+            ...value
+                .split(',')
+                .map((time) =>
+                    time.trim().endsWith('ms')
+                        ? parseFloat(time)
+                        : parseFloat(time) * 1000
+                )
+                .filter((time) => !isNaN(time))
+        )
+    const duration =
+        toMilliseconds(style.transitionDuration) +
+        toMilliseconds(style.transitionDelay)
+
+    if (duration > 0) {
+        cy.wait(Math.min(duration, MAX_TRANSITION_WAIT), { log: false })
+    }
+}
+
+const getContrastMessage = (violation: axe.Result) =>
+    (violation.nodes[0]?.failureSummary || '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(
+            (line) => line && !/^Fix (all|any) of the following:$/.test(line)
+        )
+        .join(' ') || 'Element does not have sufficient color contrast.'
+
+const checkContrastInState = (
+    el: HTMLElement,
+    state: InteractionStateType,
+    callback: CustomAuditCallback
+) => {
+    const stateText = state === 'hover' ? 'hovered' : 'focused via keyboard'
+
+    waitForTransitions(el)
+    cy.checkA11y(
+        el,
+        { runOnly: { type: 'rule', values: ['color-contrast'] } },
+        (violations) => {
+            if (!violations.length) {
+                return
+            }
+            callback(
+                violations.map((violation) =>
+                    createCustomViolation({
+                        id: `contrast-${state}-state`,
+                        impact: 'serious',
+                        description: `Elements must maintain sufficient contrast ratio in ${state} state`,
+                        help: `Elements must maintain sufficient contrast ratio when ${stateText}`,
+                        helpUrl:
+                            'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html',
+                        html: el.outerHTML,
+                        failureSummary: [
+                            getContrastMessage(violation),
+                            `Increase the color contrast of text and interactive elements to at least 4.5:1 for normal text and 3:1 for large text when ${stateText}.`,
+                        ],
+                        tags: ['wcag2aa', 'wcag143'],
+                        element: el,
+                    })
+                )
+            )
+        },
+        true
+    )
 }
 
 export const checkDynamicContrast = (
@@ -1096,90 +930,31 @@ export const checkDynamicContrast = (
         'a[href]:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex^="-"]):not([disabled])'
 
     cy.get('body', { log: false }).then(($body) => {
-        const $elements = $body.find(selector)
+        const $visibleElements = $body
+            .find(selector)
+            .filter((_, el) => !Cypress.$(el).is(':hidden'))
 
-        const $visibleElements = $elements.filter((_, el) => {
-            const $el = Cypress.$(el)
-            if ($el.is(':hidden') || $el.css('display') === 'none') {
-                return false
-            }
-            return true
-        })
-
-        if (!$visibleElements.length) {
-            return
-        }
-
-        cy.wrap($visibleElements, { log: false }).each(($el) => {
-            const el = $el[0]
-
-            cy.wrap($el).trigger('mouseover', { force: true, log: false })
-            cy.checkA11y(
-                el,
-                { runOnly: { type: 'rule', values: ['color-contrast'] } },
-                (violations) => {
-                    if (violations.length) {
-                        const customViolations = violations.map((v) => {
-                            const axeSummary =
-                                v.nodes[0]?.failureSummary ||
-                                'Element does not have sufficient color contrast.'
-                            return createCustomViolation({
-                                id: 'contrast-hover-state',
-                                impact: 'serious',
-                                description:
-                                    'Elements must maintain sufficient contrast ratio in hover state',
-                                help: 'Elements must maintain sufficient contrast ratio when hovered',
-                                helpUrl:
-                                    'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html',
-                                html: el.outerHTML,
-                                failureSummary: [
-                                    axeSummary,
-                                    'Increase the color contrast of text and interactive elements to at least 4.5:1 for normal text and 3:1 for large text when hovered.',
-                                ],
-                                tags: ['wcag2aa', 'wcag143'],
-                                element: el,
-                            })
-                        })
-                        callback(customViolations)
+        $visibleElements.each((_, el) => {
+            cy.then(() => {
+                if (!Cypress.dom.isAttached(el)) {
+                    return
+                }
+                hoverElement(el).then((isHovered) => {
+                    if (isHovered && Cypress.dom.isAttached(el)) {
+                        checkContrastInState(el, 'hover', callback)
                     }
-                },
-                true
-            )
-            cy.wrap($el).trigger('mouseout', { force: true, log: false })
+                })
+                moveMouse(0, 0)
+            })
 
-            cy.wrap($el).focus({ log: false })
-            cy.checkA11y(
-                el,
-                { runOnly: { type: 'rule', values: ['color-contrast'] } },
-                (violations) => {
-                    if (violations.length) {
-                        const customViolations = violations.map((v) => {
-                            const axeSummary =
-                                v.nodes[0]?.failureSummary ||
-                                'Element does not have sufficient color contrast.'
-                            return createCustomViolation({
-                                id: 'contrast-focus-state',
-                                impact: 'serious',
-                                description:
-                                    'Elements must maintain sufficient contrast ratio in focus state',
-                                help: 'Elements must maintain sufficient contrast ratio when focused via keyboard',
-                                helpUrl:
-                                    'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html',
-                                html: el.outerHTML,
-                                failureSummary: [
-                                    axeSummary,
-                                    'Increase the color contrast of text and interactive elements to at least 4.5:1 for normal text and 3:1 for large text when focused.',
-                                ],
-                                tags: ['wcag2aa', 'wcag143'],
-                                element: el,
-                            })
-                        })
-                        callback(customViolations)
-                    }
-                },
-                true
-            )
-            cy.wrap($el).blur({ force: true, log: false })
+            cy.then(() => {
+                if (!Cypress.dom.isAttached(el)) {
+                    return
+                }
+                el.focus()
+                checkContrastInState(el, 'focus', callback)
+                cy.then(() => el.blur())
+            })
         })
     })
 }
@@ -1371,7 +1146,7 @@ export const checkInvalidAnchorElements = (
                 id: 'invalid-anchor-element',
                 impact: 'serious',
                 description:
-                    '<a>> elements must have a valid "href" attribute or a keyboard-accessible "tabindex"',
+                    '<a> elements must have a valid "href" attribute or a keyboard-accessible "tabindex"',
                 help: 'Missing "href" attributes remove the element from the keyboard focus flow and strip its semantic role',
                 helpUrl:
                     'https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html',

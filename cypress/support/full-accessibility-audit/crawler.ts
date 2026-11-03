@@ -1,4 +1,5 @@
 import { getLinks } from './get-links'
+import { preventLeavingOrigin } from './prevent-leaving-origin'
 import { toAbsoluteUrl, toPage } from './page-url'
 import { resolvePage } from './resolve-page'
 import { isPathExcluded, normalizePath } from './sitemap-patterns'
@@ -63,7 +64,10 @@ export const crawlSite = (
 
     const crawlPage = (page: PageType) => {
         crawledPages++
-        cy.visit(toAbsoluteUrl(page.path, baseUrl), { failOnStatusCode: false })
+        cy.visit(toAbsoluteUrl(page.path, baseUrl), {
+            failOnStatusCode: false,
+            onBeforeLoad: preventLeavingOrigin,
+        })
 
         getLinks().then((links) =>
             links.forEach((link) => enqueue(toAppPage(link)))

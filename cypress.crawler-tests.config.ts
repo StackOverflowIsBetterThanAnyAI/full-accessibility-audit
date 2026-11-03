@@ -11,12 +11,18 @@ export default defineConfig({
         screenshotsFolder: 'crawler-tests/screenshots',
         setupNodeEvents(on, cypressConfig) {
             const origins: Record<string, Promise<string>> = {}
+            const requestedPaths: Record<string, string[]> = {}
             on('task', {
                 startTestSite(name: string) {
+                    requestedPaths[name] = []
                     origins[name] ||= startTestSite(
-                        `crawler-tests/sites/${name}`
+                        `crawler-tests/sites/${name}`,
+                        (path) => requestedPaths[name].push(path)
                     )
                     return origins[name]
+                },
+                getRequestedPaths(name: string) {
+                    return requestedPaths[name] || []
                 },
             })
             return config.e2e?.setupNodeEvents?.(on, cypressConfig)

@@ -1,10 +1,7 @@
 import { getLinks } from './get-links'
 import { toAbsoluteUrl, toPage } from './page-url'
 import { resolvePage } from './resolve-page'
-import {
-    cleanUpExistingPattern,
-    isPathAllowedForAudit,
-} from './sitemap-patterns'
+import { isPathExcluded, normalizePath } from './sitemap-patterns'
 import { PageType, SitemapConfigType } from './types'
 
 const DEFAULT_MAX_PAGES = 500
@@ -22,6 +19,7 @@ export const crawlSite = (
 ): Cypress.Chainable<string[]> => {
     const queryParams = sitemapConfig.queryParams || []
     const maxPages = sitemapConfig.maxPages || DEFAULT_MAX_PAGES
+    const excluded = sitemapConfig.excluded || []
 
     const knownKeys = new Set<string>()
     const auditUrls = new Set<string>()
@@ -30,16 +28,18 @@ export const crawlSite = (
 
     const toAppPage = (url: string) => toPage(url, baseUrl, queryParams)
 
+    const isAllowed = (page: PageType | null): page is PageType =>
+        !!page && !isPathExcluded(excluded, page.path)
+
     const enqueue = (page: PageType | null) => {
-        if (page && !knownKeys.has(page.key)) {
+        if (isAllowed(page) && !knownKeys.has(page.key)) {
             knownKeys.add(page.key)
             queue.push(page)
         }
     }
 
-    // a redirect may lead to another page, which must only be handled once
     const claimRedirectTarget = (page: PageType, target: PageType | null) => {
-        if (!target) {
+        if (!isAllowed(target)) {
             return null
         }
         if (target.key === page.key) {
@@ -52,11 +52,14 @@ export const crawlSite = (
         return target
     }
 
-    const addToAudit = (path: string | undefined) => {
-        if (path && isPathAllowedForAudit(sitemapConfig, path)) {
-            auditUrls.add(path)
-        }
-    }
+    const toConfiguredPaths = (paths: string[] = []) =>
+        paths.map(normalizePath).filter((path) => {
+            if (path.includes('*')) {
+                cy.log(`Ignored path with wildcard: ${path}`)
+                return false
+            }
+            return !isPathExcluded(excluded, path)
+        })
 
     const crawlPage = (page: PageType) => {
         crawledPages++
@@ -67,9 +70,12 @@ export const crawlSite = (
         )
 
         // client side redirects (meta refresh, JavaScript) replace the visited page
-        cy.location('href', { log: false }).then((currentUrl) =>
-            addToAudit(claimRedirectTarget(page, toAppPage(currentUrl))?.path)
-        )
+        cy.location('href', { log: false }).then((currentUrl) => {
+            const target = claimRedirectTarget(page, toAppPage(currentUrl))
+            if (target) {
+                auditUrls.add(target.path)
+            }
+        })
     }
 
     const processQueue = () => {
@@ -80,39 +86,39 @@ export const crawlSite = (
 
         const [requestUrl, hash] = splitHash(toAbsoluteUrl(page.path, baseUrl))
 
-        resolvePage(requestUrl).then((finalUrl) => {
-            const finalPage =
-                finalUrl === requestUrl
-                    ? page
-                    : finalUrl &&
-                      claimRedirectTarget(page, toAppPage(finalUrl + hash))
+        resolvePage(requestUrl, (url) => isAllowed(toAppPage(url))).then(
+            (finalUrl) => {
+                const finalPage =
+                    finalUrl === requestUrl
+                        ? page
+                        : finalUrl &&
+                          claimRedirectTarget(page, toAppPage(finalUrl + hash))
 
-            if (finalPage) {
-                crawlPage(finalPage)
-            } else {
-                cy.log(`Skipped page: ${page.path}`)
+                if (finalPage) {
+                    crawlPage(finalPage)
+                } else {
+                    cy.log(`Skipped page: ${page.path}`)
+                }
+                cy.then(processQueue)
             }
-            cy.then(processQueue)
-        })
+        )
     }
 
-    // errors of the application must not stop the crawler
     cy.on('uncaught:exception', () => false)
 
     return cy
         .then(() => {
             if (sitemapConfig.only?.length) {
-                sitemapConfig.only.forEach((item) =>
-                    auditUrls.add(cleanUpExistingPattern(item))
+                toConfiguredPaths(sitemapConfig.only).forEach((path) =>
+                    auditUrls.add(path)
                 )
                 return
             }
 
-            sitemapConfig.included?.forEach((item) =>
-                addToAudit(cleanUpExistingPattern(item))
-            )
-
             enqueue(toAppPage(toAbsoluteUrl('/', baseUrl)))
+            toConfiguredPaths(sitemapConfig.included).forEach((path) =>
+                enqueue(toAppPage(toAbsoluteUrl(path, baseUrl)))
+            )
             processQueue()
         })
         .then(() => Array.from(auditUrls))

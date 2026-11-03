@@ -1,6 +1,44 @@
 import { runAxeAudit } from '../support/full-accessibility-audit/auditor'
 import { ErrorListType } from '../support/full-accessibility-audit/types'
 
+const toCodeBlock = (code: string, language = '') => {
+    const longestBackticks = Math.max(
+        0,
+        ...(code.match(/`+/g) || []).map((backticks) => backticks.length)
+    )
+    const fence = '`'.repeat(Math.max(3, longestBackticks + 1))
+    return `${fence}${language}\n${code}\n${fence}`
+}
+
+const formatIssueAsMarkdown = (error: ErrorListType) => {
+    const details = error.rawDetails
+    if (!details) {
+        return toCodeBlock(error.message)
+    }
+
+    const failureSummary = details.failureSummary
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) =>
+            /^Fix (all|any) of the following:$/.test(line)
+                ? `\n**${line}**\n`
+                : `- ${line.replace(/^•\s*/, '')}`
+        )
+        .join('\n')
+        .trim()
+
+    return [
+        `**Page:** \`${error.path}\` | **${details.tagString}** | **Severity:** ${details.impact}`,
+        `${details.help}.`,
+        `**Element:**\n\n${toCodeBlock(details.html, 'html')}`,
+        `**Exact DOM Position:** \`${details.exactDomLocation}\``,
+        failureSummary,
+        `**Found on following environments:**\n\n${error.viewports.map((viewport) => `- ${viewport}`).join('\n')}`,
+        `**Help:** ${details.helpUrl}`,
+    ].join('\n\n')
+}
+
 describe('Accessibility Audit', () => {
     const baseUrl = Cypress.config('baseUrl')
     if (!baseUrl) {
@@ -73,15 +111,7 @@ describe('Accessibility Audit', () => {
             mdContent += `## Found ${totalIssues} issues\n\n`
 
             errorList.forEach((error, index) => {
-                const formattedMessage = error.message
-                    .replace('Element: ', '\n**Element:**\n```html\n')
-                    .replace(
-                        'Fix all of the following:',
-                        '```\n\n**Fix all of the following:**'
-                    )
-                    .replace('Help: ', '\n**Help:** ')
-
-                mdContent += `### ${index + 1}. [${error.id}]\n${formattedMessage}\n\n---\n`
+                mdContent += `### ${index + 1}. [${error.id}]\n\n${formatIssueAsMarkdown(error)}\n\n---\n\n`
             })
         }
 

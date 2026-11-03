@@ -25,12 +25,49 @@ jobs:
             start_command: "npx vite --port 5173 --host"    # specify the start command for your app with port and host flags being set
 			node_version: "20"	                            # optional, default: "24"
 			skip_crawler: true	                            # optional, default: false
-            base_path: "/path"                              # optional, default: "/"
+            base_path: "/path"                              # optional, default: ""
             config_file: "sitemap.json"                     # optional, default: "sitemap.json"
+            image_tag: "1.2.0"                              # optional, default: "latest", also "sha-<commit>"
 
 ```
 
 This ensures that the code is checked for digital barriers every time the file is run in this GitHub Actions pipeline.
+
+The audit runs inside a Docker container and reaches your app via the IP address of the runner. Therefore your app has to listen on all network interfaces instead of `localhost` only, e.g. with `--host` for Vite or `-H 0.0.0.0` for Next.js.
+
+## Configuration
+
+The optional config file `cypress/fixtures/sitemap.json` (or the name given in `config_file`) controls which pages are audited:
+
+```
+{
+    "config": {
+        "only": [],
+        "included": ["/landing-page"],
+        "excluded": ["/admin/*", "/logout"],
+        "queryParams": ["page"],
+        "maxPages": 500
+    }
+}
+```
+
+| Option | Description |
+| --- | --- |
+| `only` | Audits exactly these paths without crawling. `included` is ignored. |
+| `included` | Additional start pages for the crawler, e.g. pages that are not linked anywhere. They are audited and their links are crawled. |
+| `excluded` | Patterns of pages that are neither visited nor audited, e.g. logout links. Always takes priority over `only` and `included`. |
+| `queryParams` | Query parameters that lead to separate pages. By default, urls that only differ in their query parameters count as one page. |
+| `maxPages` | Maximum amount of pages the crawler visits, default: `500`. |
+
+All paths are relative to `base_path`. Patterns in `excluded` support `*` as a wildcard for any characters including `/`:
+
+- `/admin/*` excludes `/admin/users` and `/admin/users/edit`, but not `/admin`. `/admin*` excludes both.
+- `/logout` also excludes `/logout?redirect=1` and `/logout#/confirm`. Query parameters and hash routes only matter if the pattern contains them, e.g. `/shop?print=*`.
+- The comparison is case-insensitive and ignores trailing slashes.
+
+Hash routes like `#/about` or `#!/about` are treated as separate pages, anchors like `#section` are not. Tracking parameters like `utm_source` or `fbclid` are ignored.
+
+The crawler stores the found pages as `urls` in the same file. With `skip_crawler: true`, these `urls` are audited directly.
 
 ## Benchmark
 

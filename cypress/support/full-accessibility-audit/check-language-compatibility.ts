@@ -1,9 +1,9 @@
 import { francAll } from 'franc'
 import { Iso6393To1 } from './franc-map'
 
-const MIN_TEXT_LENGTH = 50
+const MIN_TEXT_LENGTH = 30
 const RELIABLE_TEXT_LENGTH = 100
-const MAX_DECLARED_LANGUAGE_SCORE = 0.8
+const MAX_DECLARED_LANGUAGE_SCORE = 0.6
 
 export const checkLanguageCompatibility = (
     declared: string,

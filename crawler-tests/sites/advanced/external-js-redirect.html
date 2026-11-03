@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>External JavaScript redirect</title>
+    </head>
+    <body>
+        <main>
+            <h1>External JavaScript redirect</h1>
+            <a href="/after-external-js">After external JavaScript redirect</a>
+            <script>
+                setTimeout(() => location.assign('https://example.com/'), 200)
+            </script>
+        </main>
+    </body>
+</html>

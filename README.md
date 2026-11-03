@@ -34,7 +34,7 @@ This ensures that the code is checked for digital barriers every time the file i
 
 ## Benchmark
 
-The audit can be validated against the official [W3C ACT rules test cases](https://www.w3.org/WAI/standards-guidelines/act/rules/). The benchmark is a local development tool only and is neither part of the GitHub Actions workflow nor of the Docker image.
+The audit can be validated against the official [W3C ACT rules test cases](https://www.w3.org/WAI/standards-guidelines/act/rules/). The benchmark is a development tool and is neither part of the audit workflow nor of the Docker image.
 
 ```
 npm run benchmark:fetch                                 # download all test cases
@@ -43,3 +43,19 @@ npm run benchmark
 ```
 
 The results (TP / FP / TN / FN, precision, recall and false positive rate per ACT rule) are written to `benchmark/results/`.
+
+## Regression Tests
+
+The workflow `.github/workflows/regression-tests.yml` runs every day and can also be started manually:
+
+- **Crawler tests** (`npm run test:crawler`): the crawler is tested against local test sites in `crawler-tests/sites/`. All tests must pass.
+- **W3C ACT benchmark**: the outcome of every test case is compared with `benchmark/baseline.json` (`npm run benchmark:compare`). The run fails if a test case gets a worse outcome than in the baseline, e.g. a new false positive or false negative. Improvements and new W3C test cases are only reported.
+
+After an intended change of the results, the baseline has to be updated and committed:
+
+```
+npm run benchmark
+npm run benchmark:update-baseline
+```
+
+As fonts and rendering differ between operating systems, the baseline should be created in the CI environment: start the workflow manually with `update_baseline` and commit the `act-benchmark-baseline` artifact as `benchmark/baseline.json`.

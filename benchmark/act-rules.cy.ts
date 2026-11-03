@@ -11,10 +11,11 @@ type OutcomeType = 'TP' | 'FP' | 'TN' | 'FN'
 type BenchmarkResultType = {
     ruleId: string
     ruleName: string
+    testcaseId: string
     testcaseTitle: string
     url: string
     expected: string
-    outcome: OutcomeType | 'unmapped'
+    outcome: OutcomeType | 'unmapped' | 'error'
     mappedIds: string[]
     detectedIds: string[]
 }
@@ -65,6 +66,7 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
 
     const results: BenchmarkResultType[] = []
     let benchmarkOrigin = ''
+    let currentTestcase: W3CActTestCaseType | undefined
 
     before(() => {
         cy.task<string>('getBenchmarkOrigin').then((origin) => {
@@ -72,10 +74,35 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
         })
     })
 
+    beforeEach(() => {
+        cy.on('uncaught:exception', () => false)
+    })
+
+    afterEach(() => {
+        const tc = currentTestcase
+        if (
+            tc &&
+            !results.some((result) => result.testcaseId === tc.testcaseId)
+        ) {
+            results.push({
+                ruleId: tc.ruleId,
+                ruleName: tc.ruleName,
+                testcaseId: tc.testcaseId,
+                testcaseTitle: tc.testcaseTitle,
+                url: tc.url,
+                expected: tc.expected,
+                outcome: 'error',
+                mappedIds: actToRuleIds[tc.ruleId] || [],
+                detectedIds: [],
+            })
+        }
+    })
+
     const totalTestcases = benchmarkData.testcases.length
 
     benchmarkData.testcases.forEach((tc, index) => {
         it(`[${index + 1}/${totalTestcases}] Benchmark ${tc.ruleId} - ${tc.testcaseTitle}`, () => {
+            currentTestcase = tc
             const errorList: ErrorListType[] = []
             const mappedIds = actToRuleIds[tc.ruleId] || []
 
@@ -102,6 +129,7 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
                 results.push({
                     ruleId: tc.ruleId,
                     ruleName: tc.ruleName,
+                    testcaseId: tc.testcaseId,
                     testcaseTitle: tc.testcaseTitle,
                     url: tc.url,
                     expected: tc.expected,
@@ -141,7 +169,10 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
     after(() => {
         const rules: Record<
             string,
-            { ruleName: string } & Record<OutcomeType | 'unmapped', number>
+            { ruleName: string } & Record<
+                BenchmarkResultType['outcome'],
+                number
+            >
         > = {}
 
         results.forEach((result) => {
@@ -152,11 +183,12 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
                 TN: 0,
                 FN: 0,
                 unmapped: 0,
+                error: 0,
             }
             rules[result.ruleId][result.outcome]++
         })
 
-        const count = (outcome: OutcomeType | 'unmapped') =>
+        const count = (outcome: BenchmarkResultType['outcome']) =>
             results.filter((result) => result.outcome === outcome).length
         const ratio = (value: number, total: number) =>
             total ? Number((value / total).toFixed(4)) : null
@@ -171,6 +203,7 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
             testcases: results.length,
             mappedTestcases: tp + fp + tn + fn,
             unmappedTestcases: count('unmapped'),
+            erroredTestcases: count('error'),
             TP: tp,
             FP: fp,
             TN: tn,
@@ -182,17 +215,17 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
         }
 
         let mdContent = `# W3C ACT Benchmark\n\n`
-        mdContent += `> - **Test cases:** ${summary.testcases} (${summary.unmappedTestcases} without mapped rule)\n`
+        mdContent += `> - **Test cases:** ${summary.testcases} (${summary.unmappedTestcases} without mapped rule, ${summary.erroredTestcases} errored)\n`
         mdContent += `> - **TP / FP / TN / FN:** ${tp} / ${fp} / ${tn} / ${fn}\n`
         mdContent += `> - **Precision:** ${summary.precision ?? '-'}\n`
         mdContent += `> - **Recall:** ${summary.recall ?? '-'}\n`
         mdContent += `> - **False positive rate:** ${summary.falsePositiveRate ?? '-'}\n\n`
-        mdContent += `| ACT Rule | Name | TP | FP | TN | FN | unmapped |\n`
-        mdContent += `| --- | --- | --- | --- | --- | --- | --- |\n`
+        mdContent += `| ACT Rule | Name | TP | FP | TN | FN | unmapped | error |\n`
+        mdContent += `| --- | --- | --- | --- | --- | --- | --- | --- |\n`
         Object.entries(rules)
             .sort(([a], [b]) => a.localeCompare(b))
             .forEach(([ruleId, rule]) => {
-                mdContent += `| ${ruleId} | ${rule.ruleName} | ${rule.TP} | ${rule.FP} | ${rule.TN} | ${rule.FN} | ${rule.unmapped} |\n`
+                mdContent += `| ${ruleId} | ${rule.ruleName} | ${rule.TP} | ${rule.FP} | ${rule.TN} | ${rule.FN} | ${rule.unmapped} | ${rule.error} |\n`
             })
 
         cy.writeFile('benchmark/results/act-benchmark.json', {

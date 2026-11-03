@@ -54,7 +54,10 @@ const findFile = (root: string, pathname: string) => {
     return null
 }
 
-export const startTestSite = (rootPath: string): Promise<string> => {
+export const startTestSite = (
+    rootPath: string,
+    onRequest: (path: string) => void = () => {}
+): Promise<string> => {
     const root = resolve(rootPath)
     const routesPath = join(root, 'routes.json')
     const routes: Record<string, RouteType> = existsSync(routesPath)
@@ -62,9 +65,9 @@ export const startTestSite = (rootPath: string): Promise<string> => {
         : {}
 
     const server = createServer((request, response) => {
-        const pathname = decodeURIComponent(
-            new URL(request.url || '/', 'http://localhost').pathname
-        )
+        const requestUrl = new URL(request.url || '/', 'http://localhost')
+        const pathname = decodeURIComponent(requestUrl.pathname)
+        onRequest(`${pathname}${requestUrl.search}`)
         const route = findRoute(routes, pathname)
 
         if (route?.location) {

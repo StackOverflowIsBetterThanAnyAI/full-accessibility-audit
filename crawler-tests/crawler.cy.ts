@@ -1,4 +1,5 @@
 import { crawlSite } from '../cypress/support/full-accessibility-audit/crawler'
+import { isPathExcluded } from '../cypress/support/full-accessibility-audit/sitemap-patterns'
 import { SitemapConfigType } from '../cypress/support/full-accessibility-audit/types'
 
 type TestConfigType = Partial<SitemapConfigType> & Record<string, unknown>
@@ -28,6 +29,21 @@ const expectFound = (urls: string[], paths: string[]) => {
 const expectNotFound = (urls: string[], paths: string[]) => {
     paths.forEach((path) => {
         expect(urls, `sitemap does not contain "${path}"`).not.to.include(path)
+    })
+}
+
+const expectNotRequested = (name: string, paths: string[]) => {
+    cy.task<string[]>('getRequestedPaths', name).then((requestedPaths) => {
+        paths.forEach((path) => {
+            expect(
+                requestedPaths.filter(
+                    (requestedPath) =>
+                        requestedPath === path ||
+                        requestedPath.startsWith(`${path}?`)
+                ),
+                `"${path}" was never requested`
+            ).to.deep.equal([])
+        })
     })
 }
 
@@ -357,5 +373,195 @@ describe('Crawler', () => {
             expect(urls).to.have.length(10)
             expectFound(urls, ['/', '/page/1'])
         })
+    })
+
+    describe('excluded patterns', () => {
+        let urls: string[] = []
+
+        before(() => {
+            crawlTestSite('patterns', {
+                queryParams: ['sort', 'print'],
+                excluded: [
+                    '/admin/*',
+                    '/logout',
+                    '/blog/*/2024',
+                    '/private',
+                    '/shop?print=*',
+                    '/docs#/private',
+                    '/team/',
+                ],
+            }).then((result) => {
+                urls = result
+            })
+        })
+
+        it('excludes subpages with a trailing wildcard, but not the parent page', () => {
+            expectFound(urls, ['/admin', '/administration'])
+            expectNotFound(urls, ['/admin/users', '/admin/users/edit'])
+        })
+
+        it('does not visit excluded pages', () => {
+            expectNotRequested('patterns', [
+                '/admin/users',
+                '/admin/users/edit',
+                '/logout',
+            ])
+        })
+
+        it('does not follow links of excluded pages', () => {
+            expectNotFound(urls, ['/admin-only-target'])
+            expectNotRequested('patterns', ['/admin-only-target'])
+        })
+
+        it('excludes all query parameters of an excluded path', () => {
+            expectNotFound(urls, ['/logout', '/logout?redirect=1'])
+        })
+
+        it('supports wildcards in the middle of a pattern', () => {
+            expectFound(urls, ['/blog', '/blog/post-1'])
+            expectNotFound(urls, ['/blog/archive/2024'])
+        })
+
+        it('matches patterns case-insensitively', () => {
+            expectNotFound(urls, ['/Private'])
+        })
+
+        it('matches query parameters and hash routes contained in the pattern', () => {
+            expectFound(urls, ['/shop?sort=price', '/docs#/intro'])
+            expectNotFound(urls, ['/shop?print=1', '/docs#/private'])
+        })
+
+        it('ignores trailing slashes of patterns', () => {
+            expectNotFound(urls, ['/team'])
+        })
+
+        it('does not follow redirects to excluded pages', () => {
+            expectNotFound(urls, ['/redirect-to-admin', '/admin/secret'])
+            expectNotRequested('patterns', ['/admin/secret'])
+        })
+    })
+
+    describe('included pages', () => {
+        let urls: string[] = []
+
+        before(() => {
+            crawlTestSite('patterns', {
+                included: [
+                    '/hidden',
+                    'about/',
+                    '/missing-included',
+                    '/admin/users',
+                    '/blog/*',
+                ],
+                excluded: ['/admin/*'],
+            }).then((result) => {
+                urls = result
+            })
+        })
+
+        it('adds pages that are not linked from the start page', () => {
+            expectFound(urls, ['/hidden'])
+        })
+
+        it('crawls the links of included pages', () => {
+            expectFound(urls, ['/hidden-child'])
+        })
+
+        it('normalizes included paths', () => {
+            expectFound(urls, ['/about'])
+            expectNotFound(urls, ['about/', '/about/'])
+            expectNoDuplicates(urls)
+        })
+
+        it('does not add included pages that do not exist', () => {
+            expectNotFound(urls, ['/missing-included'])
+        })
+
+        it('gives excluded patterns priority over included pages', () => {
+            expectNotFound(urls, ['/admin/users', '/admin-only-target'])
+            expectNotRequested('patterns', ['/admin/users'])
+        })
+
+        it('ignores wildcards in included pages', () => {
+            expectNotFound(urls, ['/blog/*', '/blog/'])
+        })
+    })
+
+    describe('only', () => {
+        let urls: string[] = []
+
+        before(() => {
+            crawlTestSite('patterns', {
+                only: ['/about', 'hidden/', '/admin/users'],
+                included: ['/blog'],
+                excluded: ['/admin/*'],
+            }).then((result) => {
+                urls = result
+            })
+        })
+
+        it('audits exactly the configured pages without crawling', () => {
+            expect(urls).to.deep.equal(['/about', '/hidden'])
+            cy.task<string[]>('getRequestedPaths', 'patterns').then(
+                (requestedPaths) => {
+                    expect(requestedPaths, 'requested pages').to.deep.equal([])
+                }
+            )
+        })
+    })
+
+    describe('excluding everything', () => {
+        let urls: string[] = []
+
+        before(() => {
+            crawlTestSite('patterns', { excluded: ['*'] }).then((result) => {
+                urls = result
+            })
+        })
+
+        it('yields an empty sitemap without visiting any page', () => {
+            expect(urls).to.deep.equal([])
+            expectNotRequested('patterns', ['/'])
+        })
+    })
+})
+
+describe('Sitemap patterns', () => {
+    const cases: [pattern: string, path: string, excluded: boolean][] = [
+        ['/admin/*', '/admin', false],
+        ['/admin/*', '/admin/users', true],
+        ['/admin/*', '/admin/users/edit', true],
+        ['/admin*', '/admin', true],
+        ['/admin*', '/administration', true],
+        ['/admin', '/administration', false],
+        ['/admin', '/admin?tab=1', true],
+        ['/admin', '/admin#/users', true],
+        ['/admin/', '/admin', true],
+        [' admin ', '/admin', true],
+        ['/Admin', '/admin', true],
+        ['/blog/*/2024', '/blog/archive/2024', true],
+        ['/blog/*/2024', '/blog/archive/2025', false],
+        ['/shop?print=*', '/shop?print=1', true],
+        ['/shop?print=*', '/shop?sort=price', false],
+        ['/shop?print=*', '/shop', false],
+        ['/docs#/private', '/docs#/private', true],
+        ['/docs#/private', '/docs#/intro', false],
+        ['/v1.2', '/v1x2', false],
+        ['/c++', '/c++', true],
+        ['/(group)', '/(group)', true],
+        ['/', '/', true],
+        ['/', '/about', false],
+        ['*', '/', true],
+        ['*', '/any/page?with=query', true],
+    ]
+
+    cases.forEach(([pattern, path, excluded]) => {
+        it(`"${pattern}" ${excluded ? 'excludes' : 'does not exclude'} "${path}"`, () => {
+            expect(isPathExcluded([pattern], path)).to.equal(excluded)
+        })
+    })
+
+    it('excludes nothing without patterns', () => {
+        expect(isPathExcluded([], '/admin')).to.equal(false)
     })
 })

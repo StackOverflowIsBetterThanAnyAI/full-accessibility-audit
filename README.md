@@ -20,16 +20,16 @@ For the specified jobs, please insert the following code:
 
 ```
 jobs:
-    full-accessibility-audit:
-        uses: StackOverflowIsBetterThanAnyAI/full-accessibility-audit/.github/workflows/full-accessibility-audit.yml@master
-        with:
-            app_port: "5173"                                # specify the port of your app
-            start_command: "npx vite --port 5173 --host"    # specify the start command for your app with port and host flags being set
-			node_version: "20"	                            # optional, default: "24"
-			skip_crawler: true	                            # optional, default: false
-            base_path: "/path"                              # optional, default: ""
-            config_file: "sitemap.json"                     # optional, default: "sitemap.json"
-            image_tag: "1.2.0"                              # optional, default: "latest", also "sha-<commit>"
+   full-accessibility-audit:
+      uses: StackOverflowIsBetterThanAnyAI/full-accessibility-audit/.github/workflows/full-accessibility-audit.yml@master
+      with:
+         app_port: "5173"				# specify the port of your app
+         start_command: "npx vite --port 5173 --host"	# specify the start command for your app with port and host flags being set
+         node_version: "22"				# optional, default: "24"
+         skip_crawler: true				# optional, default: false
+         base_path: "/path"				# optional, default: ""
+         config_file: "config.json"			# optional, default: "sitemap.json"
+         image_tag: "1.2.0"				# optional, default: "latest", also "sha-<commit>" works
 
 ```
 

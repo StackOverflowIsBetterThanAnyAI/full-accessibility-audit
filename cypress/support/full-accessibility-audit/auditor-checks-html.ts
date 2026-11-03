@@ -1,7 +1,6 @@
-import { franc } from 'franc'
 import { createCustomViolation } from './auditor-helper'
+import { detectMismatchingLanguage } from './check-language-compatibility'
 import { CustomAuditCallback, CustomViolationReturnType } from './types'
-import { checkLanguageCompatibility } from './check-language-compatibility'
 
 export const checkPrimaryLanguageMismatch = (
     $html: JQuery<HTMLElement>,
@@ -14,7 +13,7 @@ export const checkPrimaryLanguageMismatch = (
         return
     }
 
-    const $body = Cypress.$('body')
+    const $body = $html.find('body')
     if (!$body.length) {
         return
     }
@@ -24,16 +23,8 @@ export const checkPrimaryLanguageMismatch = (
     clone.find('script, style, noscript').remove()
 
     const cleanText = clone.text().replace(/\s+/g, ' ').trim()
-    if (cleanText.length < 30) {
-        return
-    }
-
-    const detectedLang3 = franc(cleanText)
-    if (detectedLang3 === 'und') {
-        return
-    }
-
-    if (!checkLanguageCompatibility(declaredLang, detectedLang3)) {
+    const detectedLang3 = detectMismatchingLanguage(cleanText, declaredLang)
+    if (detectedLang3) {
         violations.push(
             createCustomViolation({
                 id: 'primary-language-mismatch',

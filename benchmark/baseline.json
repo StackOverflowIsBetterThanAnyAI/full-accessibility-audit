@@ -1,17 +1,17 @@
 {
     "summary": {
         "testcases": 1194,
-        "mappedTestcases": 847,
+        "mappedTestcases": 850,
         "unmappedTestcases": 344,
-        "erroredTestcases": 3,
-        "TP": 205,
-        "FP": 8,
-        "TN": 563,
-        "FN": 71,
-        "precision": 0.9624,
-        "recall": 0.7428,
-        "falsePositiveRate": 0.014,
-        "timestamp": "2026-11-03T09:56:41.694Z"
+        "erroredTestcases": 0,
+        "TP": 207,
+        "FP": 0,
+        "TN": 574,
+        "FN": 69,
+        "precision": 1,
+        "recall": 0.75,
+        "falsePositiveRate": 0,
+        "timestamp": "2026-11-03T18:42:06.148Z"
     },
     "outcomes": {
         "004258203c8bf167307b6ed79f765115d16a6357": {
@@ -342,7 +342,7 @@
         "1345bf067f66f2ee893f75e43d72121a0119d6b1": {
             "ruleId": "kb1m8s",
             "testcaseTitle": "Failed Example 3",
-            "outcome": "FN"
+            "outcome": "TP"
         },
         "1370e47918de81be8896117540364bc18930eef4": {
             "ruleId": "ffbc54",
@@ -657,7 +657,7 @@
         "24a98a3ff6a69e073f768bb198671ea6a1c4568a": {
             "ruleId": "bisz58",
             "testcaseTitle": "Passed Example 2",
-            "outcome": "error"
+            "outcome": "TN"
         },
         "2512c24c9a793fa8a30958e203090f955a3fc262": {
             "ruleId": "73f2c2",
@@ -787,7 +787,7 @@
         "2c5fa101415fbeeb8802044427d3f8762a63f1b1": {
             "ruleId": "2ee8b8",
             "testcaseTitle": "Passed Example 12",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "2c65e532caf63bbf142e3bb8310f282366343ebb": {
             "ruleId": "4b1c6c",
@@ -827,7 +827,7 @@
         "2e1787fbc8a76fd8a2f8cae08d72097dab75abfd": {
             "ruleId": "qt1vmo",
             "testcaseTitle": "Inapplicable Example 5",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "2e81c3e60722202d2e92089a0695d74e8b49cdaa": {
             "ruleId": "09o5cg",
@@ -967,7 +967,7 @@
         "32bfac8a98cc212aa7bf9151bf40f665a7f51696": {
             "ruleId": "23a2a8",
             "testcaseTitle": "Passed Example 1",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "32f0d32619e3d22a8988256e0f3ebae3e0f801c9": {
             "ruleId": "9e45ec",
@@ -1422,7 +1422,7 @@
         "485f10faf222cd48fea2ab3ee79c2d354e51ea33": {
             "ruleId": "qt1vmo",
             "testcaseTitle": "Failed Example 1",
-            "outcome": "TP"
+            "outcome": "FN"
         },
         "486f868f7a1f41507a2bc214eb94087a8e906b4c": {
             "ruleId": "4b1c6c",
@@ -2197,7 +2197,7 @@
         "6a414a1455a58e4505d7c550486d628f0fd80fdd": {
             "ruleId": "bisz58",
             "testcaseTitle": "Passed Example 1",
-            "outcome": "error"
+            "outcome": "TN"
         },
         "6a7f199a37309ccab08941b0bc64e182770c29ac": {
             "ruleId": "0va7u6",
@@ -2222,7 +2222,7 @@
         "6b4b31eda2d3dc72d5b5d7dc18f594336ce3de7d": {
             "ruleId": "2ee8b8",
             "testcaseTitle": "Passed Example 10",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "6b63f3bcb8cfa7d388c35ebe82cedf6111e3c8f6": {
             "ruleId": "b49b2e",
@@ -2312,7 +2312,7 @@
         "710e48ef6593478abfd4a367b0b3668c5f410092": {
             "ruleId": "2ee8b8",
             "testcaseTitle": "Passed Example 16",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "712289cbcfbee5cd51a332265f44369f568712d3": {
             "ruleId": "78fd32",
@@ -2522,7 +2522,7 @@
         "7cddc927da518cc9b170051a9010e256068c875b": {
             "ruleId": "kb1m8s",
             "testcaseTitle": "Failed Example 4",
-            "outcome": "FN"
+            "outcome": "TP"
         },
         "7cdf59c28089794dbbd75d81f29fb9adb9327cb2": {
             "ruleId": "2eb176",
@@ -3182,7 +3182,7 @@
         "94a7ce7aea9dbfaa375c459c26d3a5923de84e7a": {
             "ruleId": "2ee8b8",
             "testcaseTitle": "Passed Example 14",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "94ff40484422832c2910086d4387163aa2d9dd7d": {
             "ruleId": "2779a5",
@@ -3772,7 +3772,7 @@
         "af4423575333947073fa3729f502ff0a0c6c2fbf": {
             "ruleId": "qt1vmo",
             "testcaseTitle": "Passed Example 1",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "af732f8f4e215ef60d49f6ada1f513e8d9776aa1": {
             "ruleId": "f51b46",
@@ -4272,7 +4272,7 @@
         "c4a2fe12d5a48f7ace66475d3791e051ddefa807": {
             "ruleId": "kb1m8s",
             "testcaseTitle": "Failed Example 5",
-            "outcome": "FN"
+            "outcome": "TP"
         },
         "c4eaf50df4fa37f931374c74ac369a018b780ec6": {
             "ruleId": "ucwvc8",
@@ -4362,7 +4362,7 @@
         "c9b81bf076633f3d7c2c52b75e11ca89f921bf29": {
             "ruleId": "2ee8b8",
             "testcaseTitle": "Passed Example 15",
-            "outcome": "FP"
+            "outcome": "TN"
         },
         "ca41ec5f1dba602b8b6e332ad524cbfc5cd1505e": {
             "ruleId": "e086e5",
@@ -4582,7 +4582,7 @@
         "d48be8e9b638b9c27714cb3118a335376ed65f0f": {
             "ruleId": "bc659a",
             "testcaseTitle": "Passed Example 2",
-            "outcome": "error"
+            "outcome": "TN"
         },
         "d528a33258103014c0a03cf1e418ee0620f7b4f6": {
             "ruleId": "5f99a7",

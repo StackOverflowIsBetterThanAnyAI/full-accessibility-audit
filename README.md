@@ -53,13 +53,13 @@ The optional config file `cypress/fixtures/sitemap.json` (or the name given in `
 }
 ```
 
-| Option | Description |
-| --- | --- |
-| `only` | Audits exactly these paths without crawling. `included` is ignored. |
-| `included` | Additional start pages for the crawler, e.g. pages that are not linked anywhere. They are audited and their links are crawled. |
-| `excluded` | Patterns of pages that are neither visited nor audited, e.g. logout links. Always takes priority over `only` and `included`. |
-| `queryParams` | Query parameters that lead to separate pages. By default, urls that only differ in their query parameters count as one page. |
-| `maxPages` | Maximum amount of pages the crawler visits, default: `500`. |
+| Option        | Description                                                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `only`        | Audits exactly these paths without crawling. `included` is ignored.                                                            |
+| `included`    | Additional start pages for the crawler, e.g. pages that are not linked anywhere. They are audited and their links are crawled. |
+| `excluded`    | Patterns of pages that are neither visited nor audited, e.g. logout links. Always takes priority over `only` and `included`.   |
+| `queryParams` | Query parameters that lead to separate pages. By default, urls that only differ in their query parameters count as one page.   |
+| `maxPages`    | Maximum amount of pages the crawler visits, default: `500`.                                                                    |
 
 All paths are relative to `base_path`. Patterns in `excluded` support `*` as a wildcard for any characters including `/`:
 
@@ -83,12 +83,28 @@ npm run benchmark
 
 The results (TP / FP / TN / FN, precision, recall and false positive rate per ACT rule) are written to `benchmark/results/`.
 
+### Results
+
+The results of the last daily run of the regression tests:
+
+<!-- act-benchmark:start -->
+<!-- act-benchmark:end -->
+
+### Comparison With axe-core
+
+`npm run benchmark:axe` runs the same test cases with axe-core only: the custom checks are skipped and the axe-core rules replaced by them are enabled again. `npm run benchmark:compare-axe` compares both runs per ACT rule and writes `benchmark/results/act-benchmark-vs-axe.md`.
+
+<!-- act-benchmark-axe:start -->
+<!-- act-benchmark-axe:end -->
+
 ## Regression Tests
 
-The workflow `.github/workflows/regression-tests.yml` runs every day and can also be started manually:
+The workflow `.github/workflows/regression-tests.yml` runs every day:
 
 - **Crawler tests** (`npm run test:crawler`): the crawler is tested against local test sites in `crawler-tests/sites/`. All tests must pass.
 - **W3C ACT benchmark**: the outcome of every test case is compared with `benchmark/baseline.json` (`npm run benchmark:compare`). The run fails if a test case gets a worse outcome than in the baseline, e.g. a new false positive or false negative. Improvements and new W3C test cases are only reported.
+- **W3C ACT benchmark (axe-core only)**: `npm run benchmark:axe` for the comparison with axe-core.
+- **README**: if the W3C ACT benchmark has no regressions, `npm run benchmark:readme` writes the results of both benchmarks into this README. The README is only committed if the results have changed.
 
 After an intended change of the results, the baseline has to be updated and committed:
 

@@ -84,3 +84,74 @@ jobs:
         with:
           name: act-benchmark-results
           path: benchmark/results/
+
+  ACT_Benchmark_Axe:
+    name: W3C ACT Benchmark (axe-core only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Download W3C ACT Test Cases
+        run: npm run benchmark:fetch
+
+      - name: Run Benchmark
+        run: npm run benchmark:axe || true
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v7
+        with:
+          name: act-benchmark-axe-results
+          path: benchmark/results/
+
+  Update_README:
+    name: Update Benchmark Results in README
+    needs: [ACT_Benchmark, ACT_Benchmark_Axe]
+    if: ${{ !inputs.update_baseline }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Download Benchmark Results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: act-benchmark-*results
+          path: benchmark/results/
+          merge-multiple: true
+
+      - name: Update README
+        run: |
+          npm run benchmark:readme
+          node benchmark/compare-axe.mjs >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit Changed Results
+        run: |
+          if git diff --quiet README.md; then
+            echo "The benchmark results have not changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "update W3C ACT benchmark results" README.md
+          git pull --rebase
+          git push

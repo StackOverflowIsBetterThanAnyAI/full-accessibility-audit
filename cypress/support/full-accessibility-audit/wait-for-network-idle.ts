@@ -7,8 +7,14 @@ export const waitForNetworkIdle = (maxTimeout = 10000) => {
 
     const check = () => {
         cy.window({ log: false }).then((win) => {
-            const resources = win.performance.getEntriesByType('resource')
-            const currentCount = resources.length
+            let currentCount = 0
+            try {
+                currentCount =
+                    win.performance.getEntriesByType('resource').length
+            } catch {
+                // the window has left its origin and cannot be read anymore
+                return
+            }
 
             if (currentCount === lastResourceCount) {
                 timeIdle += checkInterval

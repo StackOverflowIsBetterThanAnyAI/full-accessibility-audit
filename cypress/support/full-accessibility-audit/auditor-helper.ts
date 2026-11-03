@@ -7,6 +7,15 @@ import {
     ViolationNodeType,
 } from './types'
 
+const CONFORMANCE_TAGS = [
+    'wcag2a',
+    'wcag2aa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag22a',
+    'wcag22aa',
+]
+
 export const createCustomViolation = (
     data: CustomViolationType & { element: HTMLElement }
 ): CustomViolationReturnType => {
@@ -26,12 +35,21 @@ export const createCustomViolation = (
     }
 }
 
+export const getReferencedElements = (element: Element, attribute: string) => {
+    const root = element.getRootNode() as Document | ShadowRoot
+    return (element.getAttribute(attribute) || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => root.getElementById(id))
+        .filter((target): target is HTMLElement => !!target)
+}
+
 const getUniqueSelector = (element: HTMLElement | null): string => {
     if (!element) {
         return 'unknown-element'
     }
     if (element.id) {
-        return `#${element.id}`
+        return `#${CSS.escape(element.id)}`
     }
 
     const path: string[] = []
@@ -39,7 +57,7 @@ const getUniqueSelector = (element: HTMLElement | null): string => {
 
     while (current && current.nodeType === Node.ELEMENT_NODE) {
         if (current.id) {
-            path.unshift(`#${current.id}`)
+            path.unshift(`#${CSS.escape(current.id)}`)
             break
         }
 
@@ -67,6 +85,7 @@ export const processViolations = (
     errorList: {
         id: string
         path?: string
+        isHint?: boolean
         message: string
         viewports: string[]
         uniqueKey: string
@@ -115,11 +134,17 @@ export const processViolations = (
             }),
         })
 
+        const isHint = !violation.tags.some((tag: string) =>
+            CONFORMANCE_TAGS.includes(tag)
+        )
         const tagString =
             violation.tags
                 .filter((tag: string) => /^wcag/i.test(tag))
                 .map((tag: string) => formatWCAGTag(tag))
-                .join(', ') || 'no WCAG reference'
+                .join(', ') ||
+            (violation.tags.includes('best-practice')
+                ? 'Best Practice'
+                : 'no WCAG reference')
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         violation.nodes.forEach((node: any) => {
@@ -198,6 +223,7 @@ export const processViolations = (
                 errorList.push({
                     id: violation.id,
                     path: currentPath,
+                    isHint,
                     uniqueKey: uniqueKey,
                     message: formattedMessage,
                     viewports: [fullContext],

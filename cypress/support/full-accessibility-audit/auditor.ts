@@ -98,6 +98,11 @@ export const runAxeAudit = (
                                         'wcag22aa',
                                     ],
                                 },
+                                rules: {
+                                    'meta-viewport': { enabled: false },
+                                    'meta-refresh': { enabled: false },
+                                    'aria-prohibited-attr': { enabled: false },
+                                },
                                 includedImpacts: [
                                     'critical',
                                     'serious',

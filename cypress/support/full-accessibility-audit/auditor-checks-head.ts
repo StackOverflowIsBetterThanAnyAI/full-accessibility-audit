@@ -58,10 +58,9 @@ export const checkFirstValidMetaRefresh = (
                     'https://www.w3.org/WAI/standards-guidelines/act/rules/bisz58/proposed/',
                 failureSummary: [
                     'The delay specified in <meta http-equiv="refresh"> must not exceed the 0-second limit.',
-                    'To pass level A: Use a server-side redirect or set the delay to 0.',
-                    'To pass level AAA: Avoid any automatic refresh entirely.',
+                    'To pass level AAA: Use a server-side redirect, set the delay to 0 or avoid any automatic refresh entirely.',
                 ],
-                tags: ['wcag2aa', 'wcag224'],
+                tags: ['wcag2aaa', 'wcag224'],
                 element: firstValidElement!,
             })
         )
@@ -171,7 +170,7 @@ export const checkValidMetaViewport = (
             const num = parseFloat(val)
             const isThisTagValid =
                 !val ||
-                (!isNaN(num) && (num < -1 || num > 1)) ||
+                (!isNaN(num) && Math.abs(num) >= 1) ||
                 ['device-width', 'device-height', 'yes'].includes(val)
             if (!isThisTagValid) {
                 isValidUserScalable = false
@@ -195,7 +194,7 @@ export const checkValidMetaViewport = (
                         ? `The maximum-scale attribute "${maxScaleMatch[1]}" must be a number less than 0 or greater than or equal to 2, or "device-width" or "device-height".`
                         : '',
                     !isValidUserScalable && userScalableMatch
-                        ? `The user-scalable attribute "${userScalableMatch[1]}" must be a number outside the range of -1 and +1, or "device-width" or "device-height" or "yes".`
+                        ? `The user-scalable attribute "${userScalableMatch[1]}" must be "yes", "device-width", "device-height" or a number less than or equal to -1 or greater than or equal to 1.`
                         : '',
                 ],
                 tags: ['wcag2aa', 'wcag144'],

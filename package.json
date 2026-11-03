@@ -9,9 +9,12 @@
         "cy:run-audit": "cypress run --browser chrome --spec cypress/e2e/audit.cy.ts",
         "benchmark:fetch": "node benchmark/fetch-testcases.mjs",
         "benchmark": "cypress run --browser chrome --config-file cypress.benchmark.config.ts",
+        "benchmark:axe": "cypress run --browser chrome --config-file cypress.benchmark.config.ts --expose AXE_ONLY=true",
         "test:crawler": "cypress run --browser chrome --config-file cypress.crawler-tests.config.ts",
         "benchmark:compare": "node benchmark/compare-baseline.mjs",
-        "benchmark:update-baseline": "node benchmark/compare-baseline.mjs --update"
+        "benchmark:update-baseline": "node benchmark/compare-baseline.mjs --update",
+        "benchmark:compare-axe": "node benchmark/compare-axe.mjs",
+        "benchmark:readme": "node benchmark/update-readme.mjs"
     },
     "dependencies": {
         "franc": "^6.2.0",

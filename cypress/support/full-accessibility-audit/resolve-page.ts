@@ -3,6 +3,7 @@ const MAX_REDIRECTS = 10
 // follows redirects within the origin and yields the final url, or null if it is no reachable HTML page
 export const resolvePage = (
     url: string,
+    canFollow: (url: string) => boolean = () => true,
     redirects = 0
 ): Cypress.Chainable<string | null> => {
     // returning a chainable from then() yields its subject, which TypeScript cannot infer
@@ -22,10 +23,13 @@ export const resolvePage = (
                 }
 
                 const target = new URL(String(location), url)
-                if (target.origin !== new URL(url).origin) {
+                if (
+                    target.origin !== new URL(url).origin ||
+                    !canFollow(target.href)
+                ) {
                     return null
                 }
-                return resolvePage(target.href, redirects + 1)
+                return resolvePage(target.href, canFollow, redirects + 1)
             }
 
             // cy.visit only supports text/html, other documents (e.g. XHTML) cannot be audited

@@ -1,0 +1,18 @@
+{
+    "/redirect-to-admin": { "status": 302, "location": "/admin/secret" },
+    "/admin/users": { "file": "admin-users.html" },
+    "/hidden": { "file": "hidden.html" },
+    "/about": { "file": "page.html" },
+    "/admin": { "file": "page.html" },
+    "/admin/*": { "file": "page.html" },
+    "/administration": { "file": "page.html" },
+    "/admin-only-target": { "file": "page.html" },
+    "/blog": { "file": "page.html" },
+    "/blog/*": { "file": "page.html" },
+    "/logout": { "file": "page.html" },
+    "/shop": { "file": "page.html" },
+    "/docs": { "file": "page.html" },
+    "/Private": { "file": "page.html" },
+    "/team": { "file": "page.html" },
+    "/hidden-child": { "file": "page.html" }
+}

@@ -315,6 +315,15 @@ describe('Crawler', () => {
             expectNotFound(urls, ['/meta-refresh', '/js-redirect'])
         })
 
+        it('stays on pages that redirect to another origin and keeps crawling their links', () => {
+            expectFound(urls, [
+                '/external-meta-refresh',
+                '/external-js-redirect',
+                '/after-external-meta',
+                '/after-external-js',
+            ])
+        })
+
         it('waits for links that are rendered after a slow fetch request', () => {
             expectFound(urls, ['/fetched', '/fetch-target'])
         })

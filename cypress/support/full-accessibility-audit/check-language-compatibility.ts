@@ -3,7 +3,7 @@ import { Iso6393To1 } from './franc-map'
 
 const MIN_TEXT_LENGTH = 30
 const RELIABLE_TEXT_LENGTH = 100
-const MAX_DECLARED_LANGUAGE_SCORE = 0.6
+const MAX_DECLARED_LANGUAGE_SCORE = 0.72
 
 export const checkLanguageCompatibility = (
     declared: string,
@@ -31,9 +31,10 @@ export const detectMismatchingLanguage = (
         return detected
     }
 
+    const baseDeclared = declared.split('-')[0]
     const declaredScore =
-        candidates.find(([language]) =>
-            checkLanguageCompatibility(declared, language)
+        candidates.find(
+            ([language]) => Iso6393To1[language] === baseDeclared
         )?.[1] ?? 0
     return declaredScore < MAX_DECLARED_LANGUAGE_SCORE ? detected : null
 }

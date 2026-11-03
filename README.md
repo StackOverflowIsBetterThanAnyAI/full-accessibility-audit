@@ -10,6 +10,8 @@ The application is scanned for all relevant subpages using an autonomous crawler
 
 These pages are then checked for compliance with WCAG 2.2 based on the axe-core engine and additional rules.
 
+The results are stored as `full-accessibility-audit.json` and `full-accessibility-audit.md` in the `full-accessibility-audit` artifact. Violations of level A and AA fail the workflow. Findings beyond that, like level AAA (e.g. generic link texts) or best practices (e.g. skipped heading levels), are listed separately as hints and do not fail the workflow.
+
 ## Installation Guide
 
 To use the finalized test environment, you must either create a new `.yml` file in the .github/workflows directory or edit an existing `.yml` file.

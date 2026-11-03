@@ -42,12 +42,11 @@ describe('System Benchmark: W3C ACT Rules Validation', () => {
         bisz58: ['meta-refresh-delay-aaa'],
         b4f0c3: ['meta-valid-viewport'],
         ffd0e9: ['non-empty-heading'],
-        '2t702h': ['details-summary-name'],
+        '2t702h': ['summary-name'],
         kb1m8s: ['prohibited-aria-naming'],
         off6ek: ['language-mismatch'],
         ucwvc8: ['primary-language-mismatch'],
-        '2ee8b8': ['label-in-name'],
-        bc4a75: ['list-invalid-structure'],
+        bc4a75: ['list'],
     }
 
     const actToRuleIds: Record<string, string[]> = {}

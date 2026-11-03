@@ -5,6 +5,8 @@ type TagType =
     | 'wcag21a'
     | 'wcag21aa'
     | 'wcag22aa'
+    | 'wcag2aaa'
+    | 'best-practice'
     | `wcag${number}`
 
 export type CustomViolationType = {
@@ -35,6 +37,7 @@ export type CustomAuditCallback = (
 export type ErrorListType = {
     id: string
     path?: string
+    isHint?: boolean
     message: string
     viewports: ViewportType[]
     uniqueKey: string

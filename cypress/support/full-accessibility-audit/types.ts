@@ -34,6 +34,7 @@ export type CustomAuditCallback = (
 
 export type ErrorListType = {
     id: string
+    path?: string
     message: string
     viewports: ViewportType[]
     uniqueKey: string

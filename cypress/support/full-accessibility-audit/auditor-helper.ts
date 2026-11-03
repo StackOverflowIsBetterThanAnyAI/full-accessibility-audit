@@ -66,6 +66,7 @@ export const processViolations = (
     violations: (CustomViolationReturnType | axe.Result)[],
     errorList: {
         id: string
+        path?: string
         message: string
         viewports: string[]
         uniqueKey: string
@@ -85,8 +86,11 @@ export const processViolations = (
     violations.forEach((violation) => {
         const nodesCount = violation.nodes.length
 
+        // file systems and upload-artifact do not allow characters like ? : * in file names
         const cleanPath =
-            currentPath.replace(/^\/|\/$/g, '').replace(/\//g, '_') || 'root'
+            currentPath
+                .replace(/^\/|\/$/g, '')
+                .replace(/[^a-zA-Z0-9_-]/g, '_') || 'root'
         const cleanViewport = String(currentViewport)
             .toLowerCase()
             .replace(/[^a-z0-9_-]/g, '')
@@ -193,6 +197,7 @@ export const processViolations = (
 
                 errorList.push({
                     id: violation.id,
+                    path: currentPath,
                     uniqueKey: uniqueKey,
                     message: formattedMessage,
                     viewports: [fullContext],

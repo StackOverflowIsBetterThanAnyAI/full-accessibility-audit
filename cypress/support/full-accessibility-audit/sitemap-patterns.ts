@@ -1,28 +1,23 @@
-import { SitemapConfigType } from './types'
 import { addLeadingSlash, removeTrailingSlash } from './url-helper'
 
+export const normalizePath = (path: string) =>
+    removeTrailingSlash(addLeadingSlash(path.trim()))
+
 const convertToRegex = (pattern: string) => {
-    let regexStr = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    regexStr = regexStr.replace(/\*/g, '.*')
+    const regexStr = pattern
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
     return new RegExp(`^${regexStr}$`, 'i')
 }
 
-export const cleanUpExistingPattern = (pattern: string) => {
-    return (
-        removeTrailingSlash(
-            addLeadingSlash(pattern.replace(/^\*|\*$/g, '').trim())
-        ) || '/'
-    )
+// query parameters and hash routes only matter if the pattern contains them
+const matchesPattern = (pattern: string, path: string) => {
+    const normalizedPattern = normalizePath(pattern)
+    const comparedPath = /[?#]/.test(normalizedPattern)
+        ? path
+        : removeTrailingSlash(path.split(/[?#]/)[0])
+    return convertToRegex(normalizedPattern).test(comparedPath)
 }
 
-export const isPathAllowedForAudit = (
-    sitemapConfig: SitemapConfigType,
-    path: string
-): boolean => {
-    const { excluded } = sitemapConfig
-    const normalized = removeTrailingSlash(path.trim())
-
-    return !excluded.some((pattern) =>
-        convertToRegex(cleanUpExistingPattern(pattern)).test(normalized)
-    )
-}
+export const isPathExcluded = (excluded: string[], path: string) =>
+    excluded.some((pattern) => matchesPattern(pattern, path))

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Leave origin</title>
+    </head>
+    <body>
+        <main>
+            <h1>Leave origin</h1>
+            <img id="leave-origin-image" src="/leave.png" />
+        </main>
+        <script>
+            setTimeout(() => {
+                location.href = 'https://example.com/'
+            }, 100)
+            throw new Error('error of the application')
+        </script>
+    </body>
+</html>

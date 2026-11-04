@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>State page</title>
+    </head>
+    <body>
+        <main>
+            <h1>State page</h1>
+            <img id="always-image" src="/always.png" />
+        </main>
+        <script>
+            const main = document.querySelector('main')
+            const add = (tagName, id) => {
+                const element = document.createElement(tagName)
+                element.id = id
+                main.append(element)
+                return element
+            }
+
+            if (localStorage.getItem('token') === 'local-secret') {
+                add('img', 'local-image').src = '/local.png'
+            }
+            if (sessionStorage.getItem('step') === '2') {
+                add('input', 'session-input')
+            }
+            if (document.cookie.split('; ').includes('consent=accepted')) {
+                add('button', 'cookie-button')
+            }
+
+            const request = indexedDB.open('app', 1)
+            request.onupgradeneeded = () =>
+                request.result.createObjectStore('users', { keyPath: 'id' })
+            request.onsuccess = () => {
+                const database = request.result
+                database
+                    .transaction('users')
+                    .objectStore('users')
+                    .get(1).onsuccess = (event) => {
+                    if (event.target.result?.name === 'Ada') {
+                        add('select', 'indexeddb-select')
+                    }
+                    database.close()
+                }
+            }
+        </script>
+    </body>
+</html>

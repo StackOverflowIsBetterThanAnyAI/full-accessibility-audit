@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Vite + React + TS</title>
+        <style>
+            body {
+                color: #000;
+                background: #fff;
+            }
+            #hover-link:hover {
+                color: #eee;
+            }
+            #focus-link:focus {
+                color: #eee;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Custom checks</h1>
+            <p>
+                <a id="hover-link" href="/clean.html"
+                    >Unreadable when hovered</a
+                >
+            </p>
+            <p>
+                <a id="focus-link" href="/clean.html"
+                    >Unreadable when focused</a
+                >
+            </p>
+            <p><a id="placeholder-link">Link without href</a></p>
+            <label id="orphaned-label" for="missing">Name</label>
+            <label for="password">Password</label>
+            <input id="password" type="password" onpaste="return false" />
+            <img id="file-name-alt" src="/photo.png" alt="photo.jpg" />
+        </main>
+    </body>
+</html>

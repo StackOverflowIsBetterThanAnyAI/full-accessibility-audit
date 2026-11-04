@@ -1,0 +1,3 @@
+{
+    "/protected.html": { "cookie": "auth=server-secret" }
+}

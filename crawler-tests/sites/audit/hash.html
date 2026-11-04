@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Hash router</title>
+    </head>
+    <body>
+        <main>
+            <h1>Hash router</h1>
+        </main>
+        <script>
+            // the route is only rendered on load, so every hash route needs a new page load
+            if (location.hash === '#/broken') {
+                const image = document.createElement('img')
+                image.id = 'hash-image'
+                image.src = '/hash.png'
+                document.querySelector('main').append(image)
+            }
+        </script>
+    </body>
+</html>

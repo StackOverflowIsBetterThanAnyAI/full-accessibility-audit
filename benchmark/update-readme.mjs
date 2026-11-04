@@ -6,6 +6,7 @@ import {
     compareRules,
     formatSummaryValue,
     hasResults,
+    markdownTable,
     readResults,
     SUMMARY_KEYS,
 } from './benchmark-results.mjs'
@@ -30,9 +31,32 @@ const replaceSection = (readme, name, content) => {
 const full = readResults('act-benchmark', 'npm run benchmark')
 const { summary } = full
 
-let resultsSection = `| Test cases | Mapped | TP | FP | TN | FN | Precision | Recall | False positive rate |\n`
-resultsSection += `| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n`
-resultsSection += `| ${summary.testcases} | ${summary.mappedTestcases} | ${summary.TP} | ${summary.FP} | ${summary.TN} | ${summary.FN} | ${['precision', 'recall', 'falsePositiveRate'].map((key) => formatSummaryValue(key, summary[key])).join(' | ')} |\n\n`
+let resultsSection = `${markdownTable(
+    [
+        'Test cases',
+        'Mapped',
+        'TP',
+        'FP',
+        'TN',
+        'FN',
+        'Precision',
+        'Recall',
+        'False positive rate',
+    ],
+    [
+        [
+            summary.testcases,
+            summary.mappedTestcases,
+            summary.TP,
+            summary.FP,
+            summary.TN,
+            summary.FN,
+            ...['precision', 'recall', 'falsePositiveRate'].map((key) =>
+                formatSummaryValue(key, summary[key])
+            ),
+        ],
+    ]
+)}\n\n`
 resultsSection += `${summary.unmappedTestcases} test cases belong to ACT rules without a mapped check, ${summary.erroredTestcases} test cases errored.`
 
 let readme = readFileSync(readmePath, 'utf8')
@@ -42,10 +66,14 @@ if (hasResults('act-benchmark-axe')) {
     const axeOnly = readResults('act-benchmark-axe', 'npm run benchmark:axe')
     const { changed } = compareRules(full, axeOnly)
 
-    let axeSection = `| | axe-core only | Full audit |\n| --- | --- | --- |\n`
-    for (const key of SUMMARY_KEYS) {
-        axeSection += `| ${key} | ${formatSummaryValue(key, axeOnly.summary[key])} | ${formatSummaryValue(key, summary[key])} |\n`
-    }
+    let axeSection = `${markdownTable(
+        ['', 'axe-core only', 'Full audit'],
+        SUMMARY_KEYS.map((key) => [
+            key,
+            formatSummaryValue(key, axeOnly.summary[key]),
+            formatSummaryValue(key, summary[key]),
+        ])
+    )}\n`
     axeSection += `\nACT rules with different outcomes (axe-core only → full audit):\n\n`
     axeSection += changedRulesTable(changed)
     readme = replaceSection(readme, 'act-benchmark-axe', axeSection)

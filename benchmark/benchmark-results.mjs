@@ -71,11 +71,30 @@ export const compareRules = (full, axeOnly) => {
     return { onlyFull, changed }
 }
 
-export const changedRulesTable = (changed) =>
-    `| ACT Rule | Name | ${OUTCOMES.join(' | ')} |\n| --- | --- | ${OUTCOMES.map(() => '---').join(' | ')} |\n` +
-    changed
-        .map(
-            ({ ruleId, fullRule, axeRule }) =>
-                `| ${ruleId} | ${fullRule.ruleName} | ${OUTCOMES.map((outcome) => `${axeRule[outcome]} → ${fullRule[outcome]}`).join(' | ')} |`
+export const markdownTable = (header, rows) => {
+    const widths = header.map((_, column) =>
+        Math.max(
+            3,
+            ...[header, ...rows].map((row) => String(row[column]).length)
         )
-        .join('\n')
+    )
+    const toRow = (cells) =>
+        `| ${cells.map((cell, column) => String(cell).padEnd(widths[column])).join(' | ')} |`
+    return [
+        toRow(header),
+        toRow(widths.map((width) => '-'.repeat(width))),
+        ...rows.map(toRow),
+    ].join('\n')
+}
+
+export const changedRulesTable = (changed) =>
+    markdownTable(
+        ['ACT Rule', 'Name', ...OUTCOMES],
+        changed.map(({ ruleId, fullRule, axeRule }) => [
+            ruleId,
+            fullRule.ruleName,
+            ...OUTCOMES.map(
+                (outcome) => `${axeRule[outcome]} → ${fullRule[outcome]}`
+            ),
+        ])
+    )

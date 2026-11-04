@@ -29,6 +29,8 @@ describe('Crawler: Discovery Phase', () => {
                 cy.readFile(sitemapPath).then((existingSitemap) => {
                     if (existingSitemap && existingSitemap.config) {
                         sitemapConfig = existingSitemap.config
+                    }
+                    if (existingSitemap) {
                         state = toState(existingSitemap)
                     }
                 })

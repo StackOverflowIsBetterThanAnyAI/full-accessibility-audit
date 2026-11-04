@@ -84,7 +84,7 @@ jobs:
 
           # the secrets are passed as environment variables and never written into the mounted folders
           AUDIT_ENV_FILE="$RUNNER_TEMP/audit.env"
-          printf '%s\n' "$AUDIT_ENV" > "$AUDIT_ENV_FILE"
+          printf '%s\n' "$AUDIT_ENV" | tr -d '\r' > "$AUDIT_ENV_FILE"
 
           GATEWAY_IP=$(docker network inspect bridge -f '{{ (index .IPAM.Config 0).Gateway }}')
 

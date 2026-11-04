@@ -122,6 +122,24 @@ export const applyStateBeforeLoad = (
     }
 }
 
+// Cypress does not reset IndexedDB, cache storage and service workers between the tests
+export const clearStorage = (origin: string) => {
+    cy.clearAllCookies({ log: false })
+    cy.clearAllLocalStorage({ log: false })
+    cy.clearAllSessionStorage({ log: false })
+    if (Cypress.browser.family === 'chromium') {
+        cy.then(() =>
+            Cypress.automation('remote:debugger:protocol', {
+                command: 'Storage.clearDataForOrigin',
+                params: {
+                    origin,
+                    storageTypes: 'indexeddb,cache_storage,service_workers',
+                },
+            })
+        )
+    }
+}
+
 export const setStateCookies = (state: StateType | null, baseUrl: string) => {
     const defaultDomain = new URL(baseUrl).hostname
     state?.cookies?.forEach(({ name, value, ...options }: CookieStateType) => {

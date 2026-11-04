@@ -105,7 +105,9 @@ Pages that are only available with a certain state, e.g. after a login or with a
 | `cookies`        | Cookies with `name` and `value`, optional `domain` (default: host of the app), `path`, `secure`, `httpOnly`, `expiry` and `sameSite`.                                                        |
 | `indexedDB`      | Databases with `version` and `stores`. Each store has a `name`, optional `keyPath`, `autoIncrement`, `indexes` and `records`. Without `keyPath`, records are `{ "key": ..., "value": ... }`. |
 
-The crawler always uses the state, so it also finds the pages that require it. Every page is audited twice, once without and once with the state. Logout links should be added to `excluded`, otherwise the crawler might delete the session.
+The crawler always uses the state, so it also finds the pages that require it. Every page is audited twice, once without and once with the state. Pages that the server only delivers with the state (e.g. `401` without the session cookie) are only audited with the state. Logout links should be added to `excluded`, otherwise the crawler might delete the session.
+
+Before every page load of the audit, cookies, local storage, session storage, IndexedDB, cache storage and service workers are cleared, so data the app stored on the previous page does not affect the next one.
 
 The IndexedDB databases are recreated before every page load, so the app does not run its own upgrade. Therefore `version` has to match the version of the app and `stores` has to contain all object stores and indexes the app expects.
 
@@ -198,7 +200,7 @@ ACT rules with different outcomes (axe-core only → full audit):
 
 The workflow `.github/workflows/regression-tests.yml` runs every day:
 
-- **Crawler tests** (`npm run test:crawler`): the crawler is tested against local test sites in `crawler-tests/sites/`. All tests must pass.
+- **Crawler and audit tests** (`npm run test:crawler`): the crawler and the audit are tested against local test sites in `crawler-tests/sites/`, e.g. the custom checks, the injected state and hash routes. All tests must pass.
 - **W3C ACT benchmark**: the outcome of every test case is compared with `benchmark/baseline.json` (`npm run benchmark:compare`). The run fails if a test case gets a worse outcome than in the baseline, e.g. a new false positive or false negative. Improvements and new W3C test cases are only reported.
 - **W3C ACT benchmark (axe-core only)**: `npm run benchmark:axe` for the comparison with axe-core.
 - **README**: if the W3C ACT benchmark has no regressions, `npm run benchmark:readme` writes the results of both benchmarks into this README. The README is only committed if the results have changed.

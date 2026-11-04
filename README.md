@@ -111,6 +111,8 @@ Pages that are only available with a certain state, e.g. after a login or with a
 
 The crawler always uses the state, so it also finds the pages that require it. Every page is audited twice, once without and once with the state. Pages that the server only delivers with the state (e.g. `401` without the session cookie) are only audited with the state. Logout links should be added to `excluded`, otherwise the crawler might delete the session.
 
+If a page redirects with the state to the same location as without it, e.g. to the login because a token has expired, the state was probably not accepted. The crawler would lose such a page and the audit would only check its version without the state. These pages are listed as `warnings` in the sitemap, in `full-accessibility-audit.json` and at the top of `full-accessibility-audit.md`. Warnings do not fail the workflow. A page that stays at its url and only shows different content (e.g. a login form on `/`) cannot be detected this way.
+
 Before every page load of the audit, cookies, local storage, session storage, IndexedDB, cache storage and service workers are cleared, so data the app stored on the previous page does not affect the next one.
 
 The IndexedDB databases are recreated before every page load, so the app does not run its own upgrade. Therefore `version` has to match the version of the app and `stores` has to contain all object stores and indexes the app expects.

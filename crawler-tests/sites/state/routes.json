@@ -1,0 +1,3 @@
+{
+    "/server.html": { "cookie": "auth=server-secret" }
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>State</title>
+    </head>
+    <body>
+        <nav id="links">
+            <a href="/server.html">server</a>
+        </nav>
+        <script>
+            const addLink = (href) => {
+                const link = document.createElement('a')
+                link.href = href
+                link.textContent = href
+                document.getElementById('links').append(link)
+            }
+
+            if (localStorage.getItem('token') === 'local-secret') {
+                addLink('/local.html')
+            }
+            if (
+                JSON.parse(localStorage.getItem('settings') || '{}').theme ===
+                'dark'
+            ) {
+                addLink('/object.html')
+            }
+            if (sessionStorage.getItem('session') === 'session-value') {
+                addLink('/session.html')
+            }
+            if (document.cookie.split('; ').includes('consent=accepted')) {
+                addLink('/cookie.html')
+            }
+
+            const request = indexedDB.open('app', 1)
+            request.onupgradeneeded = () =>
+                request.result.createObjectStore('users', { keyPath: 'id' })
+            request.onsuccess = () => {
+                const database = request.result
+                database
+                    .transaction('users')
+                    .objectStore('users')
+                    .get(1).onsuccess = (event) => {
+                    if (event.target.result?.name === 'Ada') {
+                        addLink('/indexeddb.html')
+                    }
+                    database.close()
+                }
+            }
+        </script>
+    </body>
+</html>

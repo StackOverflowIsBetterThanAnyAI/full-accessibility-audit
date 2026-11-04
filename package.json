@@ -22,23 +22,26 @@
     },
     "prettier": "prettier-es5",
     "devDependencies": {
-        "@eslint/js": "^9.39.4",
+        "@eslint/js": "^10.0.1",
         "@types/jquery": "^4.0.1",
         "@types/node": "^24.19.2",
         "aria-api": "^0.9.1",
         "axe-core": "^4.14.0",
-        "cypress": "^15.19.0",
+        "cypress": "^15.21.1",
         "cypress-axe": "^1.7.0",
-        "eslint": "^9.39.4",
+        "eslint": "^10.14.0",
         "eslint-plugin-react-hooks": "^7.1.1",
-        "eslint-plugin-react-refresh": "^0.5.3",
-        "globals": "^17.8.0",
+        "eslint-plugin-react-refresh": "^0.5.7",
+        "globals": "^17.14.0",
         "prettier-es5": "^0.0.4",
-        "typescript": "~5.9.3",
-        "typescript-eslint": "^8.70.0",
+        "typescript": "~6.0.3",
+        "typescript-eslint": "^8.72.1",
         "wait-on": "^9.5.1"
     },
     "allowScripts": {
-        "cypress@15.19.0": true
+        "cypress@15.21.1": true
+    },
+    "overrides": {
+        "minimatch": "^11.0.4"
     }
 }

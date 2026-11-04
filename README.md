@@ -88,6 +88,13 @@ The results (TP / FP / TN / FN, precision, recall and false positive rate per AC
 The results of the last daily run of the regression tests:
 
 <!-- act-benchmark:start -->
+
+| Test cases | Mapped | TP | FP | TN | FN | Precision | Recall | False positive rate |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1194 | 850 | 207 | 0 | 574 | 69 | 100.00 % | 75.00 % | 0.00 % |
+
+344 test cases belong to ACT rules without a mapped check, 0 test cases errored.
+
 <!-- act-benchmark:end -->
 
 ### Comparison With axe-core
@@ -95,6 +102,35 @@ The results of the last daily run of the regression tests:
 `npm run benchmark:axe` runs the same test cases with axe-core only: the custom checks are skipped and the axe-core rules replaced by them are enabled again. `npm run benchmark:compare-axe` compares both runs per ACT rule and writes `benchmark/results/act-benchmark-vs-axe.md`.
 
 <!-- act-benchmark-axe:start -->
+
+| | axe-core only | Full audit |
+| --- | --- | --- |
+| testcases | 1194 | 1194 |
+| mappedTestcases | 798 | 850 |
+| unmappedTestcases | 396 | 344 |
+| erroredTestcases | 0 | 0 |
+| TP | 182 | 207 |
+| FP | 2 | 0 |
+| TN | 537 | 574 |
+| FN | 77 | 69 |
+| precision | 98.91 % | 100.00 % |
+| recall | 70.27 % | 75.00 % |
+| falsePositiveRate | 0.37 % | 0.00 % |
+
+ACT rules with different outcomes (axe-core only → full audit):
+
+| ACT Rule | Name | TP | FP | TN | FN | unmapped | error |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 46ca7f | Element marked as decorative is not exposed | 0 → 3 | 0 → 0 | 7 → 7 | 3 → 0 | 0 → 0 | 0 → 0 |
+| b4f0c3 | Meta viewport allows for zoom | 5 → 7 | 0 → 0 | 9 → 9 | 2 → 0 | 0 → 0 | 0 → 0 |
+| bc659a | Meta element has no refresh delay | 4 → 4 | 1 → 0 | 9 → 10 | 0 → 0 | 0 → 0 | 0 → 0 |
+| bisz58 | Meta element has no refresh delay (no exception) | 1 → 3 | 1 → 0 | 9 → 10 | 2 → 0 | 0 → 0 | 0 → 0 |
+| ffd0e9 | Heading has non-empty accessible name | 0 → 8 | 0 → 0 | 7 → 7 | 8 → 0 | 0 → 0 | 0 → 0 |
+| kb1m8s | ARIA global properties not used where prohibited | 0 → 5 | 0 → 0 | 0 → 4 | 0 → 0 | 9 → 0 | 0 → 0 |
+| off6ek | HTML element language subtag matches language | 0 → 2 | 0 → 0 | 0 → 9 | 0 → 2 | 13 → 0 | 0 → 0 |
+| qt1vmo | Image accessible name is descriptive | 0 → 0 | 0 → 0 | 0 → 13 | 0 → 3 | 16 → 0 | 0 → 0 |
+| ucwvc8 | HTML page language subtag matches default language | 0 → 3 | 0 → 0 | 0 → 9 | 0 → 2 | 14 → 0 | 0 → 0 |
+
 <!-- act-benchmark-axe:end -->
 
 ## Regression Tests

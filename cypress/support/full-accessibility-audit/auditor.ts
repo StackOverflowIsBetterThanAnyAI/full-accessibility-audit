@@ -9,6 +9,7 @@ import {
     ErrorListType,
     StateType,
     ViewportType,
+    WarningListType,
 } from './types'
 import {
     applyStateBeforeLoad,
@@ -18,12 +19,16 @@ import {
 } from './apply-state'
 import { isOnOrigin, preventLeavingOrigin } from './prevent-leaving-origin'
 import { addLeadingSlash } from './url-helper'
+import { checkStateApplied, toComparableLocation } from './state-check'
 
 export const runAxeAudit = (
     currentPath: string,
     errorList: ErrorListType[],
     state: StateType | null = null,
-    { axeOnly = false }: { axeOnly?: boolean } = {}
+    {
+        axeOnly = false,
+        warningList = [],
+    }: { axeOnly?: boolean; warningList?: WarningListType[] } = {}
 ) => {
     const scenarios = [{ name: 'default state', useState: false }]
 
@@ -50,6 +55,13 @@ export const runAxeAudit = (
         : addLeadingSlash(currentPath)
     const pageUrl = new URL(securePath, Cypress.config('baseUrl') || undefined)
     const pageOrigin = pageUrl.origin
+    const requestedLocation = toComparableLocation(pageUrl)
+
+    // where the page ends up after loading, per scenario and viewport
+    const finalLocations: Record<
+        string,
+        Partial<Record<ViewportType, string>>
+    > = Object.fromEntries(scenarios.map((scenario) => [scenario.name, {}]))
 
     // pages that are protected by the server, e.g. with a session cookie, cannot be audited without the state
     const isAvailable = (useState: boolean): Cypress.Chainable<boolean> => {
@@ -113,6 +125,9 @@ export const runAxeAudit = (
                         )
                         return
                     }
+
+                    finalLocations[scenario.name][viewport.name] =
+                        toComparableLocation(win.location)
 
                     cy.injectAxe()
 
@@ -222,5 +237,17 @@ export const runAxeAudit = (
                 })
             }
         )
+    })
+
+    cy.then(() => {
+        if (hasState(state)) {
+            checkStateApplied(
+                currentPath,
+                requestedLocation,
+                finalLocations['default state'],
+                finalLocations['injected state'],
+                warningList
+            )
+        }
     })
 }

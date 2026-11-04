@@ -6,6 +6,7 @@ import { runAxeAudit } from '../support/full-accessibility-audit/auditor'
 import {
     ErrorListType,
     StateType,
+    WarningListType,
 } from '../support/full-accessibility-audit/types'
 
 const toCodeBlock = (code: string, language = '') => {
@@ -51,19 +52,25 @@ describe('Accessibility Audit', () => {
     if (!baseUrl) {
         throw new Error('baseUrl is not defined. Please check your config.')
     }
-    let sitemap: { urls: string[] } & Parameters<typeof toState>[0]
+    let sitemap: {
+        urls: string[]
+        warnings?: WarningListType[]
+    } & Parameters<typeof toState>[0]
 
     try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         sitemap = require('../fixtures/sitemap.json')
         if (!sitemap.urls || !sitemap.urls.length) {
-            sitemap = { urls: [] }
+            // the warnings of the crawler explain, why pages are missing
+            sitemap = { urls: [], warnings: sitemap.warnings }
         }
     } catch {
         sitemap = { urls: [] }
     }
 
     const errorList: ErrorListType[] = []
+    // pages that the crawler could not reach with the state are not part of the urls anymore
+    const warningList: WarningListType[] = [...(sitemap.warnings || [])]
     let state: StateType | null = null
 
     before(() => {
@@ -74,7 +81,7 @@ describe('Accessibility Audit', () => {
 
     sitemap.urls.forEach((path) => {
         it(`Auditing: ${path}`, () => {
-            runAxeAudit(path, errorList, state)
+            runAxeAudit(path, errorList, state, { warningList })
         })
     })
 
@@ -89,6 +96,7 @@ describe('Accessibility Audit', () => {
         cy.log(`Amount of checked pages: ${sitemap.urls.length}`)
         cy.log(`Total issues found: ${totalIssues}`)
         cy.log(`Hints (AAA and best practices): ${hints.length}`)
+        cy.log(`Warnings: ${warningList.length}`)
         cy.log('----------------------------')
 
         if (!sitemap.urls.length) {
@@ -102,17 +110,38 @@ describe('Accessibility Audit', () => {
                 totalCheckedPages: sitemap.urls.length,
                 totalIssues: totalIssues,
                 totalHints: hints.length,
+                totalWarnings: warningList.length,
                 timestamp: new Date().toISOString(),
             },
             issues,
             hints,
+            warnings: warningList,
         })
 
         let mdContent = `# Full Accessibility Audit \n\n`
         mdContent += `> - **Total issues found:** ${totalIssues}\n`
         mdContent += `> - **Hints (AAA and best practices):** ${hints.length}\n`
         mdContent += `> - **Amount of checked pages:** ${sitemap.urls.length}\n`
+        mdContent += `> - **Warnings:** ${warningList.length}\n`
         mdContent += `> - **Timestamp:** ${new Date().toLocaleString('de-DE')}\n\n---\n\n`
+
+        if (warningList.length) {
+            mdContent +=
+                `## ${warningList.length} warnings\n\n` +
+                `These pages behaved with the injected state like without it, so the state was probably not accepted. ` +
+                `Check the values of the state, e.g. whether a token has expired.\n\n`
+
+            warningList.forEach((warning, index) => {
+                mdContent +=
+                    `### ${index + 1}. [${warning.id}]\n\n` +
+                    `**Page:** \`${warning.path}\` | **Redirected to:** \`${warning.redirectedLocation}\`\n\n` +
+                    `${warning.message}\n\n` +
+                    (warning.viewports.length
+                        ? `**Found on following environments:**\n\n${warning.viewports.map((viewport) => `- ${viewport}`).join('\n')}\n\n`
+                        : `**Found by the crawler**, so the page is missing in the audit.\n\n`) +
+                    `---\n\n`
+            })
+        }
 
         if (!sitemap.urls.length) {
             mdContent +=
@@ -144,6 +173,10 @@ describe('Accessibility Audit', () => {
         cy.writeFile(mdPath, mdContent)
 
         cy.then(() => {
+            warningList.forEach((warning) => {
+                cy.log(`Warning: ${warning.message}`)
+            })
+
             if (!totalIssues) {
                 cy.log(
                     'All checked subpages passed the accessibility audit without any issues.'

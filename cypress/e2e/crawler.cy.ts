@@ -6,6 +6,7 @@ import { crawlSite } from '../support/full-accessibility-audit/crawler'
 import {
     SitemapConfigType,
     StateType,
+    WarningListType,
 } from '../support/full-accessibility-audit/types'
 
 describe('Crawler: Discovery Phase', () => {
@@ -22,6 +23,7 @@ describe('Crawler: Discovery Phase', () => {
         excluded: [],
     }
     let state: StateType | null = null
+    const warningList: WarningListType[] = []
 
     it('Crawls all pages based on config', () => {
         cy.task<boolean>('checkIfFileExists', sitemapPath).then((exists) => {
@@ -39,7 +41,7 @@ describe('Crawler: Discovery Phase', () => {
 
         cy.then(() => resolveState(state))
             .then((resolvedState) =>
-                crawlSite(baseUrl, sitemapConfig, resolvedState)
+                crawlSite(baseUrl, sitemapConfig, resolvedState, warningList)
             )
             .then((urls) => {
                 // the state is stored with its placeholders, never with the resolved secrets
@@ -47,6 +49,7 @@ describe('Crawler: Discovery Phase', () => {
                     config: sitemapConfig,
                     state,
                     urls,
+                    warnings: warningList,
                     generatedAt: new Date().toISOString(),
                 })
             })

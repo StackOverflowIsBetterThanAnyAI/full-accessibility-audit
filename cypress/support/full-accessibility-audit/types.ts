@@ -83,6 +83,15 @@ export type ViolationNodeType = {
 
 export type ViewportType = 'Mobile' | 'Desktop'
 
+export type WarningListType = {
+    id: 'state-not-applied'
+    path: string
+    message: string
+    requestedLocation: string
+    redirectedLocation: string
+    viewports: ViewportType[]
+}
+
 export type SitemapConfigType = {
     only: string[]
     included: string[]

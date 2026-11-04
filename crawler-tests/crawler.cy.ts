@@ -8,6 +8,7 @@ import { isPathExcluded } from '../cypress/support/full-accessibility-audit/site
 import {
     SitemapConfigType,
     StateType,
+    WarningListType,
 } from '../cypress/support/full-accessibility-audit/types'
 
 type TestConfigType = Partial<SitemapConfigType> & Record<string, unknown>
@@ -608,6 +609,76 @@ describe('Crawler', () => {
                     )
                     .then((urls) => expectFound(urls, statePages))
             )
+        })
+
+        describe('warning if the state is not accepted', () => {
+            const crawlRequiresState = (
+                testState: StateType,
+                warningList: WarningListType[]
+            ) =>
+                cy.task<string>('startTestSite', 'state').then((origin) =>
+                    resolveState(testState).then((resolvedState) =>
+                        crawlSite(
+                            origin,
+                            {
+                                only: [],
+                                included: ['/requires-state.html'],
+                                excluded: [],
+                            },
+                            resolvedState,
+                            warningList
+                        )
+                    )
+                )
+
+            it('warns if a page redirects with the state like without it', () => {
+                const warningList: WarningListType[] = []
+                crawlRequiresState(
+                    { localStorage: { token: 'expired-token' } },
+                    warningList
+                ).then((urls) => {
+                    expectNotFound(urls, ['/requires-state.html'])
+                    expect(warningList).to.have.length(1)
+                    expect(warningList[0]).to.include({
+                        id: 'state-not-applied',
+                        path: '/requires-state.html',
+                        requestedLocation: '/requires-state.html',
+                        redirectedLocation: '/',
+                    })
+                    expect(warningList[0].viewports).to.deep.equal([])
+                })
+            })
+
+            it('does not warn if the state is accepted', () => {
+                const warningList: WarningListType[] = []
+                crawlRequiresState(
+                    { localStorage: { token: '{{env.CRAWLER_TEST_TOKEN}}' } },
+                    warningList
+                ).then((urls) => {
+                    expectFound(urls, ['/requires-state.html'])
+                    expect(warningList).to.deep.equal([])
+                })
+            })
+
+            it('does not check the redirects without a state', () => {
+                const warningList: WarningListType[] = []
+                cy.task<string>('startTestSite', 'state')
+                    .then((origin) =>
+                        crawlSite(
+                            origin,
+                            {
+                                only: [],
+                                included: ['/requires-state.html'],
+                                excluded: [],
+                            },
+                            null,
+                            warningList
+                        )
+                    )
+                    .then(() => {
+                        expect(warningList).to.deep.equal([])
+                    })
+            })
         })
 
         it('replaces placeholders with environment variables', () => {

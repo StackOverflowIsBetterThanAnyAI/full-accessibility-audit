@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>requires state</title>
+    </head>
+    <body>
+        <h1>requires state</h1>
+        <script>
+            // like a single page application that redirects to its start page with an invalid token
+            if (localStorage.getItem('token') !== 'local-secret') {
+                history.replaceState(null, '', '/')
+                document.querySelector('h1').textContent = 'Login'
+            }
+        </script>
+    </body>
+</html>

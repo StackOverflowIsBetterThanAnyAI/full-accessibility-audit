@@ -3,6 +3,7 @@ import { runAxeAudit } from '../cypress/support/full-accessibility-audit/auditor
 import {
     ErrorListType,
     StateType,
+    WarningListType,
 } from '../cypress/support/full-accessibility-audit/types'
 
 const DEFAULT_CONTEXTS = ['Mobile (default state)', 'Desktop (default state)']
@@ -216,6 +217,79 @@ describe('Audit', () => {
                     'image-alt',
                     '#protected-image',
                     STATE_CONTEXTS
+                )
+            })
+        })
+
+        describe('warning if the state is not accepted', () => {
+            const auditRequiresState = (
+                testState: StateType | null,
+                warningList: WarningListType[]
+            ) =>
+                resolveState(testState).then((resolvedState) =>
+                    cy
+                        .task<string>('startTestSite', 'audit')
+                        .then((origin) =>
+                            runAxeAudit(
+                                `${origin}/requires-state.html`,
+                                [],
+                                resolvedState,
+                                { warningList }
+                            )
+                        )
+                )
+
+            it('warns if the page redirects with the state like without it', () => {
+                const warningList: WarningListType[] = []
+                auditRequiresState(
+                    { localStorage: { token: 'expired-token' } },
+                    warningList
+                ).then(() => {
+                    expect(warningList).to.have.length(1)
+                    expect(warningList[0].id).to.equal('state-not-applied')
+                    expect(warningList[0].requestedLocation).to.equal(
+                        '/requires-state.html'
+                    )
+                    expect(warningList[0].redirectedLocation).to.equal(
+                        '/login'
+                    )
+                    expect(warningList[0].viewports).to.have.members([
+                        'Mobile',
+                        'Desktop',
+                    ])
+                })
+            })
+
+            it('does not warn if the state is accepted', () => {
+                const warningList: WarningListType[] = []
+                auditRequiresState(state, warningList).then(() => {
+                    expect(warningList).to.deep.equal([])
+                })
+            })
+
+            it('does not warn without a state', () => {
+                const warningList: WarningListType[] = []
+                auditRequiresState(null, warningList).then(() => {
+                    expect(warningList).to.deep.equal([])
+                })
+            })
+
+            it('does not warn if the page stays at its url in both states', () => {
+                const warningList: WarningListType[] = []
+                resolveState(state).then((resolvedState) =>
+                    cy
+                        .task<string>('startTestSite', 'audit')
+                        .then((origin) =>
+                            runAxeAudit(
+                                `${origin}/state.html`,
+                                [],
+                                resolvedState,
+                                { warningList }
+                            )
+                        )
+                        .then(() => {
+                            expect(warningList).to.deep.equal([])
+                        })
                 )
             })
         })

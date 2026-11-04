@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Page that requires the state</title>
+    </head>
+    <body>
+        <main>
+            <h1>Page that requires the state</h1>
+        </main>
+        <script>
+            // like a single page application that shows its login with an invalid token
+            if (localStorage.getItem('token') !== 'local-secret') {
+                history.replaceState(null, '', '/login')
+                document.querySelector('h1').textContent = 'Login'
+            }
+        </script>
+    </body>
+</html>

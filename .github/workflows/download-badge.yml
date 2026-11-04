@@ -1,0 +1,48 @@
+name: Update Download Badge
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  Update_Download_Badge:
+    name: Update Download Badge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Read Total Downloads
+        id: downloads
+        run: |
+          PACKAGE_URL="https://github.com/${{ github.repository }}/pkgs/container/full-accessibility-audit"
+          DOWNLOADS=$(curl -sfL "$PACKAGE_URL" | grep -A1 'Total downloads' | grep -o 'title="[0-9]*"' | grep -o '[0-9]\+' || true)
+          if [ -z "$DOWNLOADS" ]; then
+            echo "::error::The total downloads could not be read from $PACKAGE_URL"
+            exit 1
+          fi
+          echo "count=$DOWNLOADS" >> "$GITHUB_OUTPUT"
+
+      - name: Commit Badge
+        env:
+          DOWNLOADS: ${{ steps.downloads.outputs.count }}
+        run: |
+          if git fetch --depth 1 origin badges:refs/remotes/origin/badges; then
+            git switch -c badges origin/badges
+          else
+            git switch --orphan badges
+          fi
+          printf '{"schemaVersion":1,"label":"audit runs","message":"%s","color":"blue"}\n' "$DOWNLOADS" > downloads.json
+          git add downloads.json
+          if git diff --cached --quiet; then
+            echo "The downloads have not changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "update download badge"
+          git push origin badges

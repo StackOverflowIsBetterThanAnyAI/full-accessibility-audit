@@ -1,5 +1,7 @@
 # Full Accessibility Audit
 
+![audit runs](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/StackOverflowIsBetterThanAnyAI/full-accessibility-audit/badges/downloads.json)
+
 ## What?
 
 This tool automatically checks your JavaScript web application for digital accessibility.
@@ -11,6 +13,8 @@ The application is scanned for all relevant subpages using an autonomous crawler
 These pages are then checked for compliance with WCAG 2.2 based on the axe-core engine and additional rules.
 
 The results are stored as `full-accessibility-audit.json` and `full-accessibility-audit.md` in the `full-accessibility-audit` artifact. Violations of level A and AA fail the workflow. Findings beyond that, like level AAA (e.g. generic link texts) or best practices (e.g. skipped heading levels), are listed separately as hints and do not fail the workflow.
+
+If none of the start pages can be crawled, e.g. because the app is not reachable or returns an error, the workflow fails. If there is nothing to audit, e.g. because all pages are excluded, the workflow passes and the report states that no pages were audited.
 
 ## Installation Guide
 
@@ -211,3 +215,7 @@ After an intended change of the results, the baseline has to be updated and comm
 npm run benchmark
 npm run benchmark:update-baseline
 ```
+
+## Usage Statistics
+
+The badge at the top shows how often the audit has run. Every run pulls the Docker image, therefore the workflow `.github/workflows/download-badge.yml` reads the total downloads of the image from its package page every day and stores them on the branch `badges`. The README itself does not change, shields.io renders the badge from `downloads.json` on that branch.

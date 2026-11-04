@@ -130,6 +130,20 @@ npm run benchmark
 
 The results (TP / FP / TN / FN, precision, recall and false positive rate per ACT rule) are written to `benchmark/results/`.
 
+Every W3C test case is expected to either fail or pass (or be inapplicable). A test case counts as detected if the audit reports one of the checks mapped to its ACT rule:
+
+| Value               | Meaning                                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| TP (true positive)  | The test case is expected to fail and the audit detects it.                                                    |
+| FP (false positive) | The test case is expected to pass or is inapplicable, but the audit reports a violation.                       |
+| TN (true negative)  | The test case is expected to pass or is inapplicable and the audit reports no violation.                       |
+| FN (false negative) | The test case is expected to fail, but the audit misses it.                                                    |
+| Precision           | `TP / (TP + FP)`: share of the reported violations that are real violations.                                   |
+| Recall              | `TP / (TP + FN)`: share of the real violations that are detected.                                              |
+| False positive rate | `FP / (FP + TN)`: share of the passing or inapplicable test cases that are wrongly reported.                   |
+| Mapped / unmapped   | Test cases of ACT rules with or without a mapped check. Unmapped test cases are not part of TP / FP / TN / FN. |
+| Errored             | Test cases that could not be audited, e.g. because the page failed to load.                                    |
+
 ### Results
 
 The results of the last daily run of the regression tests:

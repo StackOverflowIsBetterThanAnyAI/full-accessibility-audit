@@ -85,24 +85,17 @@ describe('Accessibility Audit', () => {
         const jsonPath = 'cypress/fixtures/full-accessibility-audit.json'
         const mdPath = 'cypress/fixtures/full-accessibility-audit.md'
 
-        if (!sitemap.urls.length) {
-            cy.log('----------------------------')
-            cy.log('No pages found in sitemap.')
-            cy.log(
-                'Please ensure that the crawler has generated the sitemap.json file.'
-            )
-            cy.log(
-                'If you have already run the crawler and the sitemap.json file is present, please check its contents to ensure it has the expected structure.'
-            )
-            cy.log('----------------------------')
-            return
-        }
-
         cy.log('----------------------------')
         cy.log(`Amount of checked pages: ${sitemap.urls.length}`)
         cy.log(`Total issues found: ${totalIssues}`)
         cy.log(`Hints (AAA and best practices): ${hints.length}`)
         cy.log('----------------------------')
+
+        if (!sitemap.urls.length) {
+            cy.log(
+                'No pages to audit. All pages are excluded or the sitemap contains no urls.'
+            )
+        }
 
         cy.writeFile(jsonPath, {
             summary: {
@@ -121,7 +114,11 @@ describe('Accessibility Audit', () => {
         mdContent += `> - **Amount of checked pages:** ${sitemap.urls.length}\n`
         mdContent += `> - **Timestamp:** ${new Date().toLocaleString('de-DE')}\n\n---\n\n`
 
-        if (!totalIssues) {
+        if (!sitemap.urls.length) {
+            mdContent +=
+                `## No pages to audit\n` +
+                `All pages are excluded or the sitemap contains no urls.`
+        } else if (!totalIssues) {
             mdContent +=
                 `## No issues found!\n` +
                 `All checked subpages passed the accessibility audit without any issues.\n` +

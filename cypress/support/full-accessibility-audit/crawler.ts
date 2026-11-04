@@ -129,7 +129,17 @@ export const crawlSite = (
             toConfiguredPaths(sitemapConfig.included).forEach((path) =>
                 enqueue(toAppPage(toAbsoluteUrl(path, baseUrl)))
             )
+            const startPages = queue.map((page) => page.path)
             processQueue()
+
+            // an empty sitemap is only valid if there is nothing to crawl, otherwise the app is not reachable
+            cy.then(() => {
+                if (startPages.length && !auditUrls.size) {
+                    throw new Error(
+                        `None of the start pages (${startPages.join(', ')}) could be crawled. Check that the app is running at ${baseUrl} and returns an HTML page with a 2xx status code.`
+                    )
+                }
+            })
         })
         .then(() => Array.from(auditUrls))
 }

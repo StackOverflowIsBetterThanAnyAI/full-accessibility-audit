@@ -377,6 +377,19 @@ describe('Crawler', () => {
         })
     })
 
+    describe('unreachable app', () => {
+        it('fails if none of the start pages can be crawled', () => {
+            cy.on('fail', (error) => {
+                expect(error.message).to.contain(
+                    'None of the start pages (/) could be crawled'
+                )
+            })
+            crawlTestSite('errors', {}, '/server-error').then(() => {
+                throw new Error('the crawler did not fail')
+            })
+        })
+    })
+
     describe('limits', () => {
         let urls: string[] = []
 

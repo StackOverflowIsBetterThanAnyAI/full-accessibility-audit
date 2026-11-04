@@ -91,6 +91,37 @@ export type SitemapConfigType = {
     maxPages?: number
 }
 
+export type CookieStateType = { name: string; value: string } & Partial<
+    Pick<
+        Cypress.SetCookieOptions,
+        'domain' | 'path' | 'secure' | 'httpOnly' | 'expiry' | 'sameSite'
+    >
+>
+
+export type IndexedDBStateType = {
+    database: string
+    version?: number
+    stores: {
+        name: string
+        keyPath?: string | string[]
+        autoIncrement?: boolean
+        indexes?: {
+            name: string
+            keyPath: string | string[]
+            unique?: boolean
+            multiEntry?: boolean
+        }[]
+        records?: unknown[]
+    }[]
+}
+
+export type StateType = {
+    localStorage?: Record<string, unknown>
+    sessionStorage?: Record<string, unknown>
+    cookies?: CookieStateType[]
+    indexedDB?: IndexedDBStateType[]
+}
+
 export type PageType = {
     key: string
     path: string

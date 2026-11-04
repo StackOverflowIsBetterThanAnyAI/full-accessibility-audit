@@ -10,6 +10,7 @@ export default defineConfig({
         specPattern: 'crawler-tests/**/*.cy.ts',
         screenshotsFolder: 'crawler-tests/screenshots',
         setupNodeEvents(on, cypressConfig) {
+            process.env.CRAWLER_TEST_TOKEN = 'local-secret'
             const origins: Record<string, Promise<string>> = {}
             const requestedPaths: Record<string, string[]> = {}
             on('task', {

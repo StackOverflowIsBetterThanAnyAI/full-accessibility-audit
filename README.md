@@ -30,6 +30,8 @@ jobs:
          base_path: "/path"				# optional, default: ""
          config_file: "config.json"			# optional, default: "sitemap.json"
          image_tag: "1.2.0"				# optional, default: "latest", also "sha-<commit>" works
+      secrets:
+         audit_env: ${{ secrets.AUDIT_ENV }}		# optional, values for the placeholders of the state
 
 ```
 
@@ -70,6 +72,51 @@ All paths are relative to `base_path`. Patterns in `excluded` support `*` as a w
 Hash routes like `#/about` or `#!/about` are treated as separate pages, anchors like `#section` are not. Tracking parameters like `utm_source` or `fbclid` are ignored.
 
 The crawler stores the found pages as `urls` in the same file. With `skip_crawler: true`, these `urls` are audited directly.
+
+### State
+
+Pages that are only available with a certain state, e.g. after a login or with an accepted cookie banner, can be reached with an injected `state`:
+
+```
+{
+    "config": { ... },
+    "state": {
+        "localStorage": { "token": "{{env.AUDIT_TOKEN}}", "settings": { "theme": "dark" } },
+        "sessionStorage": { "step": "2" },
+        "cookies": [
+            { "name": "consent", "value": "accepted" },
+            { "name": "session", "value": "{{env.AUDIT_SESSION}}", "httpOnly": true }
+        ],
+        "indexedDB": [
+            {
+                "database": "app",
+                "version": 1,
+                "stores": [{ "name": "users", "keyPath": "id", "records": [{ "id": 1, "name": "Ada" }] }]
+            }
+        ]
+    }
+}
+```
+
+| Option           | Description                                                                                                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `localStorage`   | Entries of the local storage. Objects are stored as JSON.                                                                                                                                    |
+| `sessionStorage` | Entries of the session storage. Objects are stored as JSON.                                                                                                                                  |
+| `cookies`        | Cookies with `name` and `value`, optional `domain` (default: host of the app), `path`, `secure`, `httpOnly`, `expiry` and `sameSite`.                                                        |
+| `indexedDB`      | Databases with `version` and `stores`. Each store has a `name`, optional `keyPath`, `autoIncrement`, `indexes` and `records`. Without `keyPath`, records are `{ "key": ..., "value": ... }`. |
+
+The crawler always uses the state, so it also finds the pages that require it. Every page is audited twice, once without and once with the state. Logout links should be added to `excluded`, otherwise the crawler might delete the session.
+
+The IndexedDB databases are recreated before every page load, so the app does not run its own upgrade. Therefore `version` has to match the version of the app and `stores` has to contain all object stores and indexes the app expects.
+
+Secrets must not be stored in the config file. Use placeholders like `{{env.AUDIT_TOKEN}}` instead and pass the values as the secret `audit_env` with one `KEY=VALUE` per line:
+
+```
+AUDIT_TOKEN=eyJhbGciOi...
+AUDIT_SESSION=4f2a...
+```
+
+The placeholders are only replaced during the audit, the sitemap written by the crawler still contains the placeholders. The audit fails if a placeholder has no value.
 
 ## Benchmark
 

@@ -9,6 +9,7 @@ type RouteType = {
     location?: string
     file?: string
     delay?: number
+    cookie?: string
 }
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -70,6 +71,12 @@ export const startTestSite = (
         onRequest(`${pathname}${requestUrl.search}`)
         const route = findRoute(routes, pathname)
 
+        const cookies = (request.headers.cookie || '').split(/;\s*/)
+        if (route?.cookie && !cookies.includes(route.cookie)) {
+            response.writeHead(401, { 'Content-Type': 'text/html' })
+            response.end('<!DOCTYPE html><title>401</title>')
+            return
+        }
         if (route?.location) {
             response.writeHead(route.status || 302, {
                 Location: route.location,

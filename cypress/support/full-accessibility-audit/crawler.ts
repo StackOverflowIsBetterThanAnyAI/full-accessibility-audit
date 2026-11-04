@@ -1,9 +1,10 @@
+import { applyStateBeforeLoad, setStateCookies } from './apply-state'
 import { getLinks } from './get-links'
 import { preventLeavingOrigin } from './prevent-leaving-origin'
 import { toAbsoluteUrl, toPage } from './page-url'
 import { resolvePage } from './resolve-page'
 import { isPathExcluded, normalizePath } from './sitemap-patterns'
-import { PageType, SitemapConfigType } from './types'
+import { PageType, SitemapConfigType, StateType } from './types'
 
 const DEFAULT_MAX_PAGES = 500
 
@@ -16,7 +17,8 @@ const splitHash = (url: string) => {
 
 export const crawlSite = (
     baseUrl: string,
-    sitemapConfig: SitemapConfigType
+    sitemapConfig: SitemapConfigType,
+    state: StateType | null = null
 ): Cypress.Chainable<string[]> => {
     const queryParams = sitemapConfig.queryParams || []
     const maxPages = sitemapConfig.maxPages || DEFAULT_MAX_PAGES
@@ -66,7 +68,10 @@ export const crawlSite = (
         crawledPages++
         cy.visit(toAbsoluteUrl(page.path, baseUrl), {
             failOnStatusCode: false,
-            onBeforeLoad: preventLeavingOrigin,
+            onBeforeLoad: (win) => {
+                preventLeavingOrigin(win)
+                applyStateBeforeLoad(win, state, true)
+            },
         })
 
         getLinks().then((links) =>
@@ -109,6 +114,7 @@ export const crawlSite = (
     }
 
     cy.on('uncaught:exception', () => false)
+    setStateCookies(state, baseUrl)
 
     return cy
         .then(() => {

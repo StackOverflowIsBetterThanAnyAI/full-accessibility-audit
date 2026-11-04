@@ -1,6 +1,14 @@
+import {
+    hasState,
+    resolveState,
+    toState,
+} from '../cypress/support/full-accessibility-audit/apply-state'
 import { crawlSite } from '../cypress/support/full-accessibility-audit/crawler'
 import { isPathExcluded } from '../cypress/support/full-accessibility-audit/sitemap-patterns'
-import { SitemapConfigType } from '../cypress/support/full-accessibility-audit/types'
+import {
+    SitemapConfigType,
+    StateType,
+} from '../cypress/support/full-accessibility-audit/types'
 
 type TestConfigType = Partial<SitemapConfigType> & Record<string, unknown>
 
@@ -531,6 +539,83 @@ describe('Crawler', () => {
         it('yields an empty sitemap without visiting any page', () => {
             expect(urls).to.deep.equal([])
             expectNotRequested('patterns', ['/'])
+        })
+    })
+
+    describe('injected state', () => {
+        const state: StateType = {
+            localStorage: {
+                token: '{{env.CRAWLER_TEST_TOKEN}}',
+                settings: { theme: 'dark' },
+            },
+            sessionStorage: { session: 'session-value' },
+            cookies: [
+                { name: 'consent', value: 'accepted' },
+                { name: 'auth', value: 'server-secret', httpOnly: true },
+            ],
+            indexedDB: [
+                {
+                    database: 'app',
+                    version: 1,
+                    stores: [
+                        {
+                            name: 'users',
+                            keyPath: 'id',
+                            records: [{ id: 1, name: 'Ada' }],
+                        },
+                    ],
+                },
+            ],
+        }
+        const statePages = [
+            '/local.html',
+            '/object.html',
+            '/session.html',
+            '/cookie.html',
+            '/indexeddb.html',
+            '/server.html',
+        ]
+
+        it('finds no protected pages without state', () => {
+            crawlTestSite('state').then((urls) => {
+                expectFound(urls, ['/'])
+                expectNotFound(urls, statePages)
+            })
+        })
+
+        it('finds the pages that require local storage, session storage, cookies and IndexedDB', () => {
+            cy.task<string>('startTestSite', 'state').then((origin) =>
+                resolveState(state)
+                    .then((resolvedState) =>
+                        crawlSite(
+                            origin,
+                            { only: [], included: [], excluded: [] },
+                            resolvedState
+                        )
+                    )
+                    .then((urls) => expectFound(urls, statePages))
+            )
+        })
+
+        it('replaces placeholders with environment variables', () => {
+            resolveState(state).then((resolvedState) => {
+                expect(resolvedState?.localStorage?.token).to.equal(
+                    'local-secret'
+                )
+                expect(resolvedState?.cookies).to.deep.equal(state.cookies)
+            })
+        })
+
+        it('converts the legacy globalStorage', () => {
+            expect(
+                toState({
+                    globalStorage: {
+                        type: 'sessionStorage',
+                        data: { token: 'abc' },
+                    },
+                })
+            ).to.deep.equal({ sessionStorage: { token: 'abc' } })
+            expect(hasState(toState({ globalStorage: null }))).to.equal(false)
         })
     })
 })

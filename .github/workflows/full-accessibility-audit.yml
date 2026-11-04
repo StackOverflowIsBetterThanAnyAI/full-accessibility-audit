@@ -43,6 +43,11 @@ on:
         default: "latest"
         description: "tag of the audit image, e.g. a version like 1.2.0 or sha-<commit>"
 
+    secrets:
+      audit_env:
+        required: false
+        description: "KEY=VALUE lines with the values for {{env.KEY}} placeholders in the state of the config file"
+
 jobs:
   Full_Accessibility_Audit:
     name: Full Accessibility Audit
@@ -65,6 +70,8 @@ jobs:
           npx wait-on http://localhost:${{ inputs.app_port }}${{ inputs.base_path }} --timeout 60000
 
       - name: Run Full Accessibility Audit via GHCR Image
+        env:
+          AUDIT_ENV: ${{ secrets.audit_env }}
         run: |
           mkdir -p audit
           mkdir -p cypress/screenshots
@@ -72,8 +79,12 @@ jobs:
           if [ -f "cypress/fixtures/${{ inputs.config_file }}" ]; then
             cp "cypress/fixtures/${{ inputs.config_file }}" audit/sitemap.json
           else
-            echo '{"config": {"only": [], "included": [], "excluded": []}, "urls": [], "globalStorage": null}' > audit/sitemap.json
+            echo '{"config": {"only": [], "included": [], "excluded": []}, "urls": [], "state": null}' > audit/sitemap.json
           fi
+
+          # the secrets are passed as environment variables and never written into the mounted folders
+          AUDIT_ENV_FILE="$RUNNER_TEMP/audit.env"
+          printf '%s\n' "$AUDIT_ENV" > "$AUDIT_ENV_FILE"
 
           GATEWAY_IP=$(docker network inspect bridge -f '{{ (index .IPAM.Config 0).Gateway }}')
 
@@ -87,6 +98,7 @@ jobs:
 
           docker run --rm \
             --ipc=host \
+            --env-file "$AUDIT_ENV_FILE" \
             -e CYPRESS_BASE_URL="$BASE_URL" \
             --add-host=host.docker.internal:host-gateway \
             -v ${{ github.workspace }}/audit:/app/cypress/fixtures \

@@ -1,5 +1,12 @@
+import {
+    resolveState,
+    toState,
+} from '../support/full-accessibility-audit/apply-state'
 import { runAxeAudit } from '../support/full-accessibility-audit/auditor'
-import { ErrorListType } from '../support/full-accessibility-audit/types'
+import {
+    ErrorListType,
+    StateType,
+} from '../support/full-accessibility-audit/types'
 
 const toCodeBlock = (code: string, language = '') => {
     const longestBackticks = Math.max(
@@ -44,8 +51,7 @@ describe('Accessibility Audit', () => {
     if (!baseUrl) {
         throw new Error('baseUrl is not defined. Please check your config.')
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let sitemap: { urls: string[]; globalStorage?: any }
+    let sitemap: { urls: string[] } & Parameters<typeof toState>[0]
 
     try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -58,10 +64,17 @@ describe('Accessibility Audit', () => {
     }
 
     const errorList: ErrorListType[] = []
+    let state: StateType | null = null
+
+    before(() => {
+        resolveState(toState(sitemap)).then((resolvedState) => {
+            state = resolvedState
+        })
+    })
 
     sitemap.urls.forEach((path) => {
         it(`Auditing: ${path}`, () => {
-            runAxeAudit(path, errorList, sitemap.globalStorage)
+            runAxeAudit(path, errorList, state)
         })
     })
 

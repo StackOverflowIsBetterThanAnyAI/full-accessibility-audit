@@ -10,7 +10,12 @@ import {
     StateType,
     ViewportType,
 } from './types'
-import { applyStateBeforeLoad, hasState, setStateCookies } from './apply-state'
+import {
+    applyStateBeforeLoad,
+    clearStorage,
+    hasState,
+    setStateCookies,
+} from './apply-state'
 import { isOnOrigin, preventLeavingOrigin } from './prevent-leaving-origin'
 import { addLeadingSlash } from './url-helper'
 
@@ -40,21 +45,44 @@ export const runAxeAudit = (
         return false
     })
 
+    const securePath = /^https?:\/\//i.test(currentPath)
+        ? currentPath
+        : addLeadingSlash(currentPath)
+    const pageUrl = new URL(securePath, Cypress.config('baseUrl') || undefined)
+    const pageOrigin = pageUrl.origin
+
+    // pages that are protected by the server, e.g. with a session cookie, cannot be audited without the state
+    const isAvailable = (useState: boolean): Cypress.Chainable<boolean> => {
+        if (useState || !hasState(state)) {
+            return cy.wrap(true, { log: false })
+        }
+        clearStorage(pageOrigin)
+        return cy
+            .request({ url: pageUrl.href, failOnStatusCode: false, log: false })
+            .then((response) => response.isOkStatusCode)
+    }
+
+    let isScenarioAvailable = true
+
     cy.wrap(scenarios).each((scenario: { name: string; useState: boolean }) => {
+        isAvailable(scenario.useState).then((available) => {
+            isScenarioAvailable = available
+            if (!available) {
+                cy.log(
+                    `Skipped the ${scenario.name} of ${currentPath}: the page is only available with the state`
+                )
+            }
+        })
+
         cy.wrap(viewports).each(
             (viewport: {
                 name: ViewportType
                 width: number
                 height: number
             }) => {
-                const securePath = /^https?:\/\//i.test(currentPath)
-                    ? currentPath
-                    : addLeadingSlash(currentPath)
-
-                const pageOrigin = new URL(
-                    securePath,
-                    Cypress.config('baseUrl') || undefined
-                ).origin
+                if (!isScenarioAvailable) {
+                    return
+                }
 
                 // cy.visit only changes the hash if the page is already open, but it has to be loaded again
                 if (securePath.includes('#')) {
@@ -63,7 +91,7 @@ export const runAxeAudit = (
                     })
                 }
 
-                cy.clearAllCookies({ log: false })
+                clearStorage(pageOrigin)
                 if (scenario.useState) {
                     setStateCookies(state, pageOrigin)
                 }

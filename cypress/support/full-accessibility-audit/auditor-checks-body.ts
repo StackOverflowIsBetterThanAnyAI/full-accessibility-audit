@@ -529,7 +529,7 @@ export const checkAdjacentLinks = (
         const nextLink = links[index + 1] as HTMLAnchorElement
 
         if (currentLink.href && currentLink.href === nextLink.href) {
-            const range = document.createRange()
+            const range = currentLink.ownerDocument.createRange()
             range.setStartAfter(currentLink)
             range.setEndBefore(nextLink)
 

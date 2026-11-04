@@ -455,7 +455,7 @@ export const checkNonEmptyHeading = (
             return
         }
 
-        let accessibleName = ''
+        let accessibleName: string
 
         if (hasAriaLabelledBy) {
             accessibleName = getReferencedElements(el, 'aria-labelledby')

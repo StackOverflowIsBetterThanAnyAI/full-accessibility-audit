@@ -7,7 +7,7 @@ export const waitForNetworkIdle = (maxTimeout = 10000) => {
 
     const check = () => {
         cy.window({ log: false }).then((win) => {
-            let currentCount = 0
+            let currentCount: number
             try {
                 currentCount =
                     win.performance.getEntriesByType('resource').length

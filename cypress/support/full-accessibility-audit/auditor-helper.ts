@@ -148,7 +148,7 @@ export const processViolations = (
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         violation.nodes.forEach((node: any) => {
-            let exactDomLocation = ''
+            let exactDomLocation: string
 
             if (
                 Array.isArray(node.target) &&

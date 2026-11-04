@@ -8,12 +8,10 @@ export const formatWCAGTag = (tag: string) => {
         const versionDigits = matchVersion[2]
         const level = matchVersion[3]
 
-        let version = ''
-        if (versionDigits.length === 1) {
-            version = `${versionDigits}.0`
-        } else {
-            version = versionDigits.slice(0, -1) + '.' + versionDigits.slice(-1)
-        }
+        const version =
+            versionDigits.length === 1
+                ? `${versionDigits}.0`
+                : versionDigits.slice(0, -1) + '.' + versionDigits.slice(-1)
 
         return `${prefix} ${version} ${level}`
     }

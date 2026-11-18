@@ -27,7 +27,7 @@
         "@types/node": "^24.19.2",
         "aria-api": "^0.9.1",
         "axe-core": "^4.14.0",
-        "cypress": "^15.21.1",
+        "cypress": "^15.21.2",
         "cypress-axe": "^1.7.0",
         "eslint": "^10.14.0",
         "eslint-plugin-react-hooks": "^7.1.1",

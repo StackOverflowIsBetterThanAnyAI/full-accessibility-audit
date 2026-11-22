@@ -35,7 +35,7 @@
         "globals": "^17.14.0",
         "prettier-es5": "^0.0.4",
         "typescript": "~6.0.3",
-        "typescript-eslint": "^8.72.1",
+        "typescript-eslint": "^8.72.2",
         "wait-on": "^9.5.1"
     },
     "allowScripts": {

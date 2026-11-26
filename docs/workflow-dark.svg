@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="1206" viewBox="0 0 820 1206" role="img" aria-labelledby="title desc">
+<title id="title">How the Full Accessibility Audit works</title>
+<desc id="desc">Workflow in six steps: 1. your app starts on the GitHub runner. 2. You configure the pages, an optional state (storage, cookies, IndexedDB, e.g. login, cookie consent or light and dark mode) and credentials as placeholders filled from the secret audit_env. 3. A crawler in a Docker image with Cypress finds all relevant pages and stores them in sitemap.json. 4. Every page is audited on mobile (360 by 667) and desktop (1280 by 720), each without and with the injected state, with axe-core for WCAG 2.0 to 2.2 level A and AA plus own checks. 5. Findings are merged per page, rule and DOM element and split into issues (A and AA), hints (AAA and best practices) and warnings. 6. The report is uploaded as the GitHub artifact full-accessibility-audit with a JSON and a Markdown file, the sitemap and screenshots. Each finding lists the element, its DOM position, how to fix it and all environments. Issues fail the workflow, otherwise it passes.</desc>
+<rect width="820" height="1206" rx="8" fill="#0d1117"/>
+<g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif">
+<rect x="24" y="16" width="772" height="70" rx="10" fill="#151b23" stroke="#3d444d" stroke-width="1"/>
+<circle cx="50" cy="42" r="13" fill="#4493f8"/>
+<text x="50" y="46.5" text-anchor="middle" font-size="13" font-weight="700" fill="#0d1117">1</text>
+<text x="74" y="47" font-size="15" font-weight="600" fill="#f0f6fc">Your app starts on the GitHub runner</text>
+<text x="74" y="67" font-size="13" fill="#9198a1">npm ci, then your start_command. The app listens on all interfaces, so the Docker container can reach it.</text>
+<line x1="410" y1="86" x2="410" y2="107" stroke="#9198a1" stroke-width="2"/>
+<path d="M404 105L410 114L416 105Z" fill="#9198a1"/>
+<rect x="24" y="114" width="772" height="176" rx="10" fill="#151b23" stroke="#3d444d" stroke-width="1"/>
+<circle cx="50" cy="140" r="13" fill="#4493f8"/>
+<text x="50" y="144.5" text-anchor="middle" font-size="13" font-weight="700" fill="#0d1117">2</text>
+<text x="74" y="145" font-size="15" font-weight="600" fill="#f0f6fc">You configure what is audited</text>
+<text x="74" y="165" font-size="13" fill="#9198a1">Optional file cypress/fixtures/sitemap.json and the secret audit_env</text>
+<rect x="74" y="182" width="227.33333333333334" height="92" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="86" y="204" font-size="13" font-weight="600" fill="#f0f6fc">Pages</text>
+<text x="86" y="224" font-size="12" fill="#9198a1">only · included · excluded</text>
+<text x="86" y="242" font-size="12" fill="#9198a1">queryParams · maxPages</text>
+<text x="86" y="260" font-size="12" fill="#9198a1">e.g. exclude /logout</text>
+<rect x="313.33333333333337" y="182" width="227.33333333333334" height="92" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="325.33333333333337" y="204" font-size="13" font-weight="600" fill="#f0f6fc">State</text>
+<text x="325.33333333333337" y="224" font-size="12" fill="#9198a1">localStorage · sessionStorage</text>
+<text x="325.33333333333337" y="242" font-size="12" fill="#9198a1">cookies · IndexedDB</text>
+<text x="325.33333333333337" y="260" font-size="12" fill="#9198a1">login, cookie consent, light / dark</text>
+<rect x="552.6666666666667" y="182" width="227.33333333333334" height="92" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="564.6666666666667" y="204" font-size="13" font-weight="600" fill="#f0f6fc">Credentials</text>
+<text x="564.6666666666667" y="224" font-size="12" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" fill="#9198a1">{{env.AUDIT_TOKEN}}</text>
+<text x="564.6666666666667" y="242" font-size="12" fill="#9198a1">filled from the secret audit_env,</text>
+<text x="564.6666666666667" y="260" font-size="12" fill="#9198a1">never stored in the repository</text>
+<line x1="410" y1="290" x2="410" y2="311" stroke="#9198a1" stroke-width="2"/>
+<path d="M404 309L410 318L416 309Z" fill="#9198a1"/>
+<text x="424" y="308" font-size="12" fill="#9198a1">Docker image with Cypress</text>
+<rect x="24" y="318" width="772" height="96" rx="10" fill="#151b23" stroke="#3d444d" stroke-width="1"/>
+<circle cx="50" cy="344" r="13" fill="#4493f8"/>
+<text x="50" y="348.5" text-anchor="middle" font-size="13" font-weight="700" fill="#0d1117">3</text>
+<text x="74" y="349" font-size="15" font-weight="600" fill="#f0f6fc">The crawler finds all relevant pages</text>
+<text x="74" y="369" font-size="13" fill="#9198a1">Starts at the start pages, follows links, hash routes and redirects, always with the state.</text>
+<text x="74" y="393" font-size="12" fill="#9198a1">Found pages are stored as urls in sitemap.json. Pages where the state was rejected become warnings.</text>
+<line x1="410" y1="414" x2="410" y2="435" stroke="#9198a1" stroke-width="2"/>
+<path d="M404 433L410 442L416 433Z" fill="#9198a1"/>
+<text x="424" y="432" font-size="12" fill="#9198a1">skipped with skip_crawler: true</text>
+<rect x="24" y="442" width="772" height="262" rx="10" fill="#151b23" stroke="#3d444d" stroke-width="1"/>
+<circle cx="50" cy="468" r="13" fill="#4493f8"/>
+<text x="50" y="472.5" text-anchor="middle" font-size="13" font-weight="700" fill="#0d1117">4</text>
+<text x="74" y="473" font-size="15" font-weight="600" fill="#f0f6fc">Every page is audited up to four times</text>
+<text x="74" y="493" font-size="13" fill="#9198a1">Storage is cleared before every page load. Every violation gets a screenshot.</text>
+<text x="337.5" y="522" text-anchor="middle" font-size="13" font-weight="600" fill="#f0f6fc">Mobile 360 × 667</text>
+<text x="636.5" y="522" text-anchor="middle" font-size="13" font-weight="600" fill="#f0f6fc">Desktop 1280 × 720</text>
+<text x="74" y="564" font-size="13" font-weight="600" fill="#f0f6fc">Default state</text>
+<text x="74" y="582" font-size="12" fill="#9198a1">without the state</text>
+<rect x="194" y="534" width="287" height="64" rx="8" fill="#0d2a4a" stroke="#4493f8" stroke-width="1"/>
+<text x="337.5" y="561" text-anchor="middle" font-size="12" fill="#f0f6fc">axe-core: WCAG 2.0, 2.1, 2.2 A + AA</text>
+<text x="337.5" y="580" text-anchor="middle" font-size="12" fill="#f0f6fc">+ own checks for head, body and html</text>
+<rect x="493" y="534" width="287" height="64" rx="8" fill="#0d2a4a" stroke="#4493f8" stroke-width="1"/>
+<text x="636.5" y="561" text-anchor="middle" font-size="12" fill="#f0f6fc">axe-core: WCAG 2.0, 2.1, 2.2 A + AA</text>
+<text x="636.5" y="580" text-anchor="middle" font-size="12" fill="#f0f6fc">+ own checks for head, body and html</text>
+<text x="74" y="640" font-size="13" font-weight="600" fill="#f0f6fc">Injected state</text>
+<text x="74" y="658" font-size="12" fill="#9198a1">only if a state exists</text>
+<rect x="194" y="610" width="287" height="64" rx="8" fill="#0d2a4a" stroke="#4493f8" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="337.5" y="637" text-anchor="middle" font-size="12" fill="#f0f6fc">axe-core: WCAG 2.0, 2.1, 2.2 A + AA</text>
+<text x="337.5" y="656" text-anchor="middle" font-size="12" fill="#f0f6fc">+ own checks for head, body and html</text>
+<rect x="493" y="610" width="287" height="64" rx="8" fill="#0d2a4a" stroke="#4493f8" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="636.5" y="637" text-anchor="middle" font-size="12" fill="#f0f6fc">axe-core: WCAG 2.0, 2.1, 2.2 A + AA</text>
+<text x="636.5" y="656" text-anchor="middle" font-size="12" fill="#f0f6fc">+ own checks for head, body and html</text>
+<text x="74" y="688" font-size="12" fill="#9198a1">Pages that the server only delivers with the state (e.g. 401 without session) are only audited with it.</text>
+<line x1="410" y1="704" x2="410" y2="725" stroke="#9198a1" stroke-width="2"/>
+<path d="M404 723L410 732L416 723Z" fill="#9198a1"/>
+<rect x="24" y="732" width="772" height="170" rx="10" fill="#151b23" stroke="#3d444d" stroke-width="1"/>
+<circle cx="50" cy="758" r="13" fill="#4493f8"/>
+<text x="50" y="762.5" text-anchor="middle" font-size="13" font-weight="700" fill="#0d1117">5</text>
+<text x="74" y="763" font-size="15" font-weight="600" fill="#f0f6fc">Findings are collected and normalised</text>
+<text x="74" y="783" font-size="13" fill="#9198a1">Same page + same rule + same DOM element = one finding, listing all environments it occurs in.</text>
+<rect x="74" y="800" width="227.33333333333334" height="86" rx="8" fill="#0d1117" stroke="#f85149" stroke-width="1.5"/>
+<text x="86" y="822" font-size="13" font-weight="600" fill="#f85149">Issues</text>
+<text x="86" y="842" font-size="12" fill="#9198a1">WCAG level A and AA</text>
+<text x="86" y="860" font-size="12" fill="#9198a1">fail the workflow</text>
+<rect x="313.33333333333337" y="800" width="227.33333333333334" height="86" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="325.33333333333337" y="822" font-size="13" font-weight="600" fill="#f0f6fc">Hints</text>
+<text x="325.33333333333337" y="842" font-size="12" fill="#9198a1">AAA and best practices,</text>
+<text x="325.33333333333337" y="860" font-size="12" fill="#9198a1">e.g. skipped heading levels</text>
+<rect x="552.6666666666667" y="800" width="227.33333333333334" height="86" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="564.6666666666667" y="822" font-size="13" font-weight="600" fill="#f0f6fc">Warnings</text>
+<text x="564.6666666666667" y="842" font-size="12" fill="#9198a1">state probably not accepted,</text>
+<text x="564.6666666666667" y="860" font-size="12" fill="#9198a1">e.g. expired token</text>
+<line x1="410" y1="902" x2="410" y2="923" stroke="#9198a1" stroke-width="2"/>
+<path d="M404 921L410 930L416 921Z" fill="#9198a1"/>
+<rect x="24" y="930" width="772" height="196" rx="10" fill="#151b23" stroke="#3d444d" stroke-width="1"/>
+<circle cx="50" cy="956" r="13" fill="#4493f8"/>
+<text x="50" y="960.5" text-anchor="middle" font-size="13" font-weight="700" fill="#0d1117">6</text>
+<text x="74" y="961" font-size="15" font-weight="600" fill="#f0f6fc">The report is uploaded as a GitHub artifact</text>
+<text x="74" y="981" font-size="13" fill="#9198a1">Artifact full-accessibility-audit, also uploaded when the audit fails</text>
+<rect x="74" y="998" width="300" height="108" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="88" y="1022" font-size="12" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" fill="#f0f6fc">full-accessibility-audit.json</text>
+<text x="88" y="1045" font-size="12" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" fill="#f0f6fc">full-accessibility-audit.md</text>
+<text x="88" y="1068" font-size="12" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" fill="#f0f6fc">sitemap.json</text>
+<text x="88" y="1091" font-size="12" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" fill="#f0f6fc">screenshots/</text>
+<rect x="386" y="998" width="394" height="108" rx="8" fill="#0d1117" stroke="#3d444d" stroke-width="1"/>
+<text x="400" y="1020" font-size="13" font-weight="600" fill="#f0f6fc">Every finding contains</text>
+<text x="400" y="1040" font-size="12" fill="#9198a1">· page, WCAG criterion and severity</text>
+<text x="400" y="1058" font-size="12" fill="#9198a1">· the element as HTML and its exact DOM position</text>
+<text x="400" y="1076" font-size="12" fill="#9198a1">· how to fix it and a link to the rule</text>
+<text x="400" y="1094" font-size="12" fill="#9198a1">· all environments where it was found</text>
+<rect x="24" y="1146" width="380" height="44" rx="8" fill="#151b23" stroke="#f85149" stroke-width="1.5"/>
+<text x="214" y="1173" text-anchor="middle" font-size="13" font-weight="600" fill="#f85149">✕  Issues found: the workflow fails</text>
+<rect x="416" y="1146" width="380" height="44" rx="8" fill="#151b23" stroke="#3fb950" stroke-width="1.5"/>
+<text x="606" y="1173" text-anchor="middle" font-size="13" font-weight="600" fill="#3fb950">✓  No issues: the workflow passes</text>
+</g>
+</svg>

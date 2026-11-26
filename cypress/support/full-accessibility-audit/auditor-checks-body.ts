@@ -13,7 +13,7 @@ const FOCUSABLE_SELECTOR =
 
 // only alt texts that consist of nothing but a generic word, e.g. "image" or "Bild 3", but not "W3C logo"
 const GENERIC_ALT_TEXT =
-    /^(an? |the |ein |eine |das )?(graphics?|pictures?|images?|photos?|icons?|logos?|diagrams?|tables?|placeholder|grafik(en)?|abbildung(en)?|bild(er)?|fotos?|symbole?|tabellen?|platzhalter)( ?[0-9]+)?$/i
+   /^(an? |the |ein |eine |das |der |die )?(graphics?|screenshots?|pictures?|img|images?|photos?|icons?|logos?|diagrams?|tables?|placeholder|grafik(en)?|abbildung(en)?|bild(er)?|fotos?|symbole?|tabellen?|platzhalter)([ _-]?[0-9]+)?$/i
 
 const FILE_NAME_ALT_TEXT =
     /\.(jpe?g|png|gif|tiff?|raw|svg|webp|avif|bmp|ico|heic)$/i

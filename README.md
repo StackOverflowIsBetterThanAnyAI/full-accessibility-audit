@@ -183,12 +183,12 @@ The results of the last daily run of the regression tests:
 | mappedTestcases   | 798           | 850        |
 | unmappedTestcases | 396           | 344        |
 | erroredTestcases  | 0             | 0          |
-| TP                | 182           | 207        |
+| TP                | 184           | 207        |
 | FP                | 2             | 0          |
 | TN                | 537           | 574        |
-| FN                | 77            | 69         |
-| precision         | 98.91 %       | 100.00 %   |
-| recall            | 70.27 %       | 75.00 %    |
+| FN                | 75            | 69         |
+| precision         | 98.92 %       | 100.00 %   |
+| recall            | 71.04 %       | 75.00 %    |
 | falsePositiveRate | 0.37 %        | 0.00 %     |
 
 ACT rules with different outcomes (axe-core only → full audit):
@@ -196,7 +196,6 @@ ACT rules with different outcomes (axe-core only → full audit):
 | ACT Rule | Name                                               | TP    | FP    | TN     | FN    | unmapped | error |
 | -------- | -------------------------------------------------- | ----- | ----- | ------ | ----- | -------- | ----- |
 | 46ca7f   | Element marked as decorative is not exposed        | 0 → 3 | 0 → 0 | 7 → 7  | 3 → 0 | 0 → 0    | 0 → 0 |
-| b4f0c3   | Meta viewport allows for zoom                      | 5 → 7 | 0 → 0 | 9 → 9  | 2 → 0 | 0 → 0    | 0 → 0 |
 | bc659a   | Meta element has no refresh delay                  | 4 → 4 | 1 → 0 | 9 → 10 | 0 → 0 | 0 → 0    | 0 → 0 |
 | bisz58   | Meta element has no refresh delay (no exception)   | 1 → 3 | 1 → 0 | 9 → 10 | 2 → 0 | 0 → 0    | 0 → 0 |
 | ffd0e9   | Heading has non-empty accessible name              | 0 → 8 | 0 → 0 | 7 → 7  | 8 → 0 | 0 → 0    | 0 → 0 |

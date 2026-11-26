@@ -8,6 +8,11 @@ This tool automatically checks your JavaScript web application for digital acces
 
 ## How?
 
+<picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/workflow-dark.svg" />
+    <img src="docs/workflow-light.svg" alt="How the Full Accessibility Audit works: your app starts on the GitHub runner, you configure pages, state and credentials, a crawler finds all pages, every page is audited on mobile and desktop without and with the injected state, findings are normalised into issues, hints and warnings and uploaded as a JSON and Markdown report. Issues fail the workflow." width="100%" />
+</picture>
+
 The application is scanned for all relevant subpages using an autonomous crawler.
 
 These pages are then checked for compliance with WCAG 2.2 based on the axe-core engine and additional rules.
